@@ -1,4 +1,8 @@
-
+library(ggplot2)
+library(pracma)
+library(lamW)
+library(ggpubr)
+library(reshape2)
 
 gammaijTime<-function(i,j,Tlag,Y){
   yi<-Y[[i]]
@@ -263,8 +267,8 @@ ploterrorconvergence<-function(Y,NumberofLags,tol){
   colnames(twostepdata)<-colnames(paraslist)
   errorsdataframe<-twostepdata-t(matrix(as.numeric(Y[[7]]),9,nrow(paraslist)))
   errorsdataframe$iter<-1:nrow(errorsdataframe)
-  meltederrors<-melt(errorsdataframe,id="iter",value="error",variable="parameter")
-  return(ggplot(meltederrors)+geom_line(aes(x=iter,y=error,colour = parameter)))
+  meltederrors<-melt(errorsdataframe,id="iter",variable="parameter")
+  return(ggplot(meltederrors)+geom_line(aes(x=iter,y=value,colour = parameter)))
 }
 
 
