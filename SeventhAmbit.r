@@ -1,6 +1,7 @@
 setwd("/Users/willallfrey/Documents/R/ExpSepAmbit")
 library(lattice)
 library(MASS)
+library(parallel)
 
 ambitfield<-function(Lt,Lx,deltat,c,B,parameters,tol,depth){
   if(missing(tol)){
@@ -112,7 +113,7 @@ ambitfield<-function(Lt,Lx,deltat,c,B,parameters,tol,depth){
   y1matrix=y11matrix+y12matrix
   y2matrix=y21matrix+y22matrix
   
-  return(list(y1matrix,y2matrix,Lx,Lt,c,deltat,parameters))
+  return(list(y1=y1matrix,y2=y2matrix,Lx=Lx,Lt=Lt,c=c,deltat=deltat,parameters=parameters))
 }
 
 g<-function(t,x,s,xi,k,mu,lambda){
@@ -121,18 +122,11 @@ g<-function(t,x,s,xi,k,mu,lambda){
 
 paras<-list(k11=0.9,k21=0.4,k22=1.4,mu11=0.5,mu21=0.9,mu22=0.2,lambda11=0.3,lambda21=0.7,lambda22=0.5)
 
-for(i in 1:10){
-  Y<-ambitfield(100,200,deltat=0.02,c=1,B=matrix(c(1,0,0,1),2,2),parameters=paras,tol=10^(-5),depth=1)
-  saveRDS(Y,file=paste("Output Fields/newparasfine002v",i,".rds",sep=""))
-}
-
-
-#Parallelisation
-library(parallel)
-detectCores()
-
-mclapply(1:10, function(i){
-  Y<-ambitfield(100,200,deltat=0.1,c=1,B=matrix(c(1,0,0,1),2,2),parameters=paras,tol=10^(-5),depth=1)
-  saveRDS(Y,file=paste("Output Fields/newparasfine01v",i,".rds",sep=""))
+mclapply(11:50, function(i){
+  Y<-ambitfield(100,200,deltat=0.5,c=1,B=matrix(c(1,0,0,1),2,2),parameters=paras,tol=10^(-5),depth=1)
+  saveRDS(Y,file=paste("Output Fields/newparasfine05v",i,".rds",sep=""))
 },mc.cores=10)
+
+
+
 
