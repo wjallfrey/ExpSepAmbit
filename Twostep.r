@@ -237,10 +237,11 @@ optimise<-function(initialvalue,datavars,timelags,spacelags,WT,WS,c){
     solve(1/Nt*Espace(theta,c)%*%t(Espace(theta,c)))}
   if(missing(WT)){WT<-WeightmatTime(initialvalue,c)}
   if(missing(WS)){WS<-WeightmatSpace(initialvalue,c)}
+  #heatmap(WT,Rowv = NA,Colv = NA)
   as.numeric(optim(initialvalue,function(vecparameters) t(dataspacerow-theoreticalvariogramsSpace(aslist(vecparameters),spacelags,c))%*%WS%*%(dataspacerow-theoreticalvariogramsSpace(aslist(vecparameters),spacelags,c))+t(datatimerow-theoreticalvariogramsTime(aslist(vecparameters),timelags,c))%*%WT%*%(datatimerow-theoreticalvariogramsTime(aslist(vecparameters),timelags,c)))$par)
 }
 
-twostepparas<-function(Y,NumberofLags,tol){
+twostepparas<-function(Y,NumberofLags,tol,fulldata){
   c<-Y[[5]]
   deltat<-Y[[6]]
   timelags<-((1:NumberofLags))*2*deltat
@@ -258,19 +259,46 @@ twostepparas<-function(Y,NumberofLags,tol){
     theta<-thetaNew
     parameterEstimateList<-rbind(parameterEstimateList,aslist(thetaNew))
   }
-  return(parameterEstimateList)
+  if(missing(fulldata)){fulldata<-F}
+  if(!fulldata){
+    return(parameterEstimateList)
+  }
+  if(fulldata){
+    return(list(paralist=parameterEstimateList,trueparas=Y[[7]],datavars=datavars,timelags=timelags,spacelags=spacelags,c=c))
+  }
 }
 
-ploterrorconvergence<-function(Y,NumberofLags,tol){
-  paraslist<-twostepparas(Y,NumberofLags,tol)
-  twostepdata<-as.data.frame(matrix(as.numeric(paraslist),nrow(paraslist),9))
-  colnames(twostepdata)<-colnames(paraslist)
-  errorsdataframe<-twostepdata-t(matrix(as.numeric(Y[[7]]),9,nrow(paraslist)))
+ploterrorconvergence<-function(paralist,trueparas){
+  if(typeof(trueparas)!="double"){trueparas<-as.numeric(trueparas)}
+  twostepdata<-as.data.frame(matrix(as.numeric(paralist),nrow(paralist),9))
+  colnames(twostepdata)<-colnames(paralist)
+  errorsdataframe<-twostepdata-t(matrix(trueparas,9,nrow(paralist)))
   errorsdataframe$iter<-1:nrow(errorsdataframe)
   meltederrors<-melt(errorsdataframe,id="iter",variable="parameter")
-  return(ggplot(meltederrors)+geom_line(aes(x=iter,y=value,colour = parameter)))
+  return(ggplot(meltederrors)+geom_line(aes(x=iter,y=value,colour = parameter))+ylab("Error"))
 }
+plotvariograms<-function(fulldata){
+  paralist<-fulldata$paralist
+  trueparas<-fulldata$trueparas
+  datavars<-fulldata$datavars
+  timelags<-fulldata$timelags
+  spacelags<-fulldata$spacelags
+  c<-fulldata$c
+  NumberofLags<-length(timelags)
+  estimatedparas<-aslist(as.numeric(tail(paralist,1)))
+  fullvariogramdata<-data.frame(timelags,spacelags,matrix(c(rowMeans(datavars$timedata),rowMeans(datavars$spacedata),theoreticalvariogramsTime(estimatedparas,timelags,c),theoreticalvariogramsSpace(estimatedparas,spacelags,c),theoreticalvariogramsTime(trueparas,timelags,c),theoreticalvariogramsSpace(trueparas,spacelags,c)),NumberofLags,18))
+  colnames(fullvariogramdata)=c("timelags","spacelags","g11hatt","g12hatt","g22hatt","g11hats","g12hats","g22hats","g11t","g12t","g22t","g11s","g12s","g22s","trueg11t","trueg12t","trueg22t","trueg11s","trueg12s","trueg22s")
+  p11t<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g11t))+geom_point(aes(timelags,g11hatt))+geom_line(aes(timelags,trueg11t),col="blue")+xlab("d_t")+ylab("gamma11T(d_t)")
+  p12t<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g12t))+geom_point(aes(timelags,g12hatt))+geom_line(aes(timelags,trueg12t),col="blue")+xlab("d_t")+ylab("gamma12T(d_t)")
+  p22t<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g22t))+geom_point(aes(timelags,g22hatt))+geom_line(aes(timelags,trueg22t),col="blue")+xlab("d_t")+ylab("gamma22T(d_t)")
+  p11s<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g11s))+geom_point(aes(timelags,g11hats))+geom_line(aes(timelags,trueg11s),col="blue")+xlab("d_t")+ylab("gamma11S(d_t)")
+  p12s<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g12s))+geom_point(aes(timelags,g12hats))+geom_line(aes(timelags,trueg12s),col="blue")+xlab("d_t")+ylab("gamma12S(d_t)")
+  p22s<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g22s))+geom_point(aes(timelags,g22hats))+geom_line(aes(timelags,trueg22s),col="blue")+xlab("d_t")+ylab("gamma22S(d_t)")
+  ggarrange(p11t,p12t,p12t,p22t,p11s,p12s,p12s,p22s,nrow=4,ncol=2)
+  }
 
+plotvariograms(twostepparas(Y,10,0.001,T))
+ploterrorconvergence(twostepparas(Y,10,0.001),as.numeric(Y[[7]]))
 
 Y<-readRDS("Output Fields/highrespointone.rds1.rds")
 Y<-readRDS("Output Fields/newparasfine3.rds")
@@ -283,7 +311,7 @@ NumberofLags<-10
 paraslist<-twostepparas(Y,10,0.001)
 as.numeric(Y[[7]])
 
-ploterrorconvergence(Y,10,0.001)
+ploterrorconvergence(paraslist,as.numeric(Y[[7]]))
 
 
 #PLOT
