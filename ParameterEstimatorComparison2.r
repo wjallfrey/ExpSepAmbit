@@ -4,6 +4,7 @@ library(lamW)
 library(ggpubr)
 library(pracma)
 
+
 #Method 1
 paraestimate<-function(Y,Tlag,Llag,c){
   y1<-Y[[1]]
