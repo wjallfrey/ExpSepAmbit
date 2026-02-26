@@ -237,7 +237,8 @@ optimise<-function(initialvalue,datavars,timelags,spacelags,WT,WS,c){
     solve(1/Nt*Espace(theta,c)%*%t(Espace(theta,c)))}
   if(missing(WT)){WT<-WeightmatTime(initialvalue,c)}
   if(missing(WS)){WS<-WeightmatSpace(initialvalue,c)}
-  #heatmap(WT,Rowv = NA,Colv = NA)
+  #print(levelplot(WT,Rowv = NA,Colv = NA))
+  #print(levelplot(WS,Rowv = NA,Colv = NA))
   as.numeric(optim(initialvalue,function(vecparameters) t(dataspacerow-theoreticalvariogramsSpace(aslist(vecparameters),spacelags,c))%*%WS%*%(dataspacerow-theoreticalvariogramsSpace(aslist(vecparameters),spacelags,c))+t(datatimerow-theoreticalvariogramsTime(aslist(vecparameters),timelags,c))%*%WT%*%(datatimerow-theoreticalvariogramsTime(aslist(vecparameters),timelags,c)))$par)
 }
 
@@ -246,8 +247,8 @@ twostepparas<-function(Y,NumberofLags,tol,fulldata){
   deltat<-Y[[6]]
   timelags<-((1:NumberofLags))*2*deltat
   spacelags<-((1:NumberofLags))*2*deltat*c
-  datavars<-datavariogram(timelags,spacelags,Y)
   
+  datavars<-datavariogram(timelags,spacelags,Y)
   initialvalue<-as.numeric(paraestimate(Y,c=c))[3:11]
   theta0<-optimise(initialvalue,datavars,timelags,spacelags,WT=ones(NumberofLags*3),WS=ones(NumberofLags*3),c=c)
   parameterEstimateList<-rbind(aslist(initialvalue),aslist(theta0))
@@ -297,8 +298,8 @@ plotvariograms<-function(fulldata){
   ggarrange(p11t,p12t,p12t,p22t,p11s,p12s,p12s,p22s,nrow=4,ncol=2)
   }
 
-plotvariograms(twostepparas(Y,10,0.001,T))
-ploterrorconvergence(twostepparas(Y,10,0.001),as.numeric(Y[[7]]))
+plotvariograms(twostepparas(Y,5,0.001,T))
+ploterrorconvergence(twostepparas(Y,5,0.001),as.numeric(Y[[7]]))
 
 Y<-readRDS("Output Fields/highrespointone.rds1.rds")
 Y<-readRDS("Output Fields/newparasfine3.rds")
