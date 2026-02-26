@@ -47,7 +47,7 @@ colMeans(allparaests)
 
 
 
-i<-46
+i<-1
 errors4(Y,5)
 
 as.numeric(Y[[7]])
