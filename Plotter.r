@@ -1,14 +1,11 @@
 setwd("/Users/willallfrey/Documents/R/ExpSepAmbit")
 library(lattice)
 library(gridExtra)
+library(ggplot2)
+library(gganimate)
+library(reshape2)
 
-oonefine1<-readRDS("Output Fields/highrespointone.rds1.rds")
-oonefine2<-readRDS("Output Fields/highrespointone.rds2.rds")
-oonefine3<-readRDS("Output Fields/highrespointone.rds3.rds")
-oonefine4<-readRDS("Output Fields/highrespointone.rds4.rds")
-oonefine5<-readRDS("Output Fields/highrespointone.rds5.rds")
-
-Y<-readRDS("Output Fields/highrespointone.rds2.rds")
+Y<-readRDS("Output Fields/bulk01v17.rds")
 
 plotfield<-function(Y){
   y1<-Y[[1]]
@@ -42,29 +39,54 @@ trajectoryOfY1Y2<-function(Y){
   plot(Y[[1]][,(Nx-1)/2],type='l',col="black",main="Y1 in black and Y2 in blue over time",ylim=c(min(Y[[1]][,(Nx-1)/2],Y[[2]][,(Nx-1)/2]),max(Y[[1]][,(Nx-1)/2],Y[[2]][,(Nx-1)/2])))
   lines(Y[[2]][,(Nx-1)/2],col="blue")
 }
+gifintime<-function(Y,nameforfile){
+  if(!missing(nameforfile)){if(typeof(nameforfile)!="character"){
+    return("Need string for file name")
+  }}
+  Nx<-dim(Y[[1]])[2]
+  Nt<-dim(Y[[1]])[1]
+  Lx<-Y[[3]]
+  Lt<-Y[[4]]
+  Y1data<-data.frame(t=0:(Nt-1)*Lt/(Nt-1),Y[[1]])
+  Y2data<-data.frame(t=0:(Nt-1)*Lt/(Nt-1),Y[[2]])
+  dfnew<-data.frame(melt(Y1data,id="t"),Y2=melt(Y2data,id="t")[,3])
+  Ydata<-dfnew
+  Ydata[,2]<-(as.numeric(dfnew[,2])-1)/(Nx-1)*Lx-Lx/2
+  colnames(Ydata)<-c("t","x","Y1","Y2")
+  animation<-ggplot(Ydata)+geom_line(aes(y=Y1,x=x,group=t))+geom_line(aes(y=Y2,x=x,group=t),col="blue")+labs(title="Y at time t = {round(frame_time)}")+xlab("x")+ylab("Y(t,x)")+transition_time(t)
+  animate(animation,nframes=501,width=960,height=480)
+  if(!missing(nameforfile)){
+    anim_save(paste(nameforfile,".gif",sep=""))
+  }
+}
 
-plotfield(Y)
+plotvariograms<-function(fulldata){
+  paralist<-fulldata$paralist
+  trueparas<-fulldata$trueparas
+  datavars<-fulldata$datavars
+  timelags<-fulldata$timelags
+  spacelags<-fulldata$spacelags
+  c<-fulldata$c
+  NumberofLags<-length(timelags)
+  estimatedparas<-aslist(as.numeric(tail(paralist,1)))
+  fullvariogramdata<-data.frame(timelags,spacelags,matrix(c(rowMeans(datavars$timedata),rowMeans(datavars$spacedata),theoreticalvariogramsTime(estimatedparas,timelags,c),theoreticalvariogramsSpace(estimatedparas,spacelags,c),theoreticalvariogramsTime(trueparas,timelags,c),theoreticalvariogramsSpace(trueparas,spacelags,c)),NumberofLags,18))
+  colnames(fullvariogramdata)=c("timelags","spacelags","g11hatt","g12hatt","g22hatt","g11hats","g12hats","g22hats","g11t","g12t","g22t","g11s","g12s","g22s","trueg11t","trueg12t","trueg22t","trueg11s","trueg12s","trueg22s")
+  p11t<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g11t))+geom_point(aes(timelags,g11hatt))+geom_line(aes(timelags,trueg11t),col="blue")+xlab("d_t")+ylab("gamma11T(d_t)")
+  p12t<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g12t))+geom_point(aes(timelags,g12hatt))+geom_line(aes(timelags,trueg12t),col="blue")+xlab("d_t")+ylab("gamma12T(d_t)")
+  p22t<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g22t))+geom_point(aes(timelags,g22hatt))+geom_line(aes(timelags,trueg22t),col="blue")+xlab("d_t")+ylab("gamma22T(d_t)")
+  p11s<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g11s))+geom_point(aes(timelags,g11hats))+geom_line(aes(timelags,trueg11s),col="blue")+xlab("d_t")+ylab("gamma11S(d_t)")
+  p12s<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g12s))+geom_point(aes(timelags,g12hats))+geom_line(aes(timelags,trueg12s),col="blue")+xlab("d_t")+ylab("gamma12S(d_t)")
+  p22s<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g22s))+geom_point(aes(timelags,g22hats))+geom_line(aes(timelags,trueg22s),col="blue")+xlab("d_t")+ylab("gamma22S(d_t)")
+  ggarrange(p11t,p12t,p12t,p22t,p11s,p12s,p12s,p22s,nrow=4,ncol=2)
+}
 
-trajectoryOfY1(oonefine1)
-trajectoryOfY1Y2(oonefine1)
+fulldata<-twostepparas(Y,10,0.001,T)
+plotvariograms(fulldata)
 
-library(ggplot2)
-library(gganimate)
-library(reshape2)
+plot(rowMeans((datavars$timedata-rowMeans(datavars$timedata))^2))
+plot(rowMeans((datavars$timedata-rowMeans(datavars$timedata))^2)/rowMeans(datavars$timedata))
+plot(rowMeans((datavars$timedata-theoreticalvariogramsTime(aslist(as.numeric(tail(paralist,1))),timelags,c))^2)/theoreticalvariogramsTime(aslist(as.numeric(tail(paralist,1))),timelags,c)^2)
+plot(rowMeans((datavars$spacedata-theoreticalvariogramsSpace(aslist(as.numeric(tail(paralist,1))),timelags,c))^2)/theoreticalvariogramsSpace(aslist(as.numeric(tail(paralist,1))),spacelags,c)^2)
+plot(rowMeans((datavars$spacedata-rowMeans(datavars$spacedata))^2)/rowMeans(datavars$spacedata)^2)
 
-Y<-oonefine1
-Nx<-dim(Y[[1]])[2]
-Nt<-dim(Y[[1]])[1]
-Lx<-Y[[3]]
-Lt<-Y[[4]]
-Y1data<-data.frame(t=0:(Nt-1)*Lt/(Nt-1),Y[[1]])
-Y2data<-data.frame(t=0:(Nt-1)*Lt/(Nt-1),Y[[2]])
-dfnew<-data.frame(melt(Y1data,id="t"),Y2=melt(Y2data,id="t")[,3])
-Ydata<-dfnew
-Ydata[,2]<-(as.numeric(dfnew[,2])-1)/(Nx-1)*Lx-Lx/2
-colnames(Ydata)<-c("t","x","Y1","Y2")
-animation<-ggplot(Ydata)+geom_line(aes(y=Y1,x=x,group=t))+geom_line(aes(y=Y2,x=x,group=t),col="blue")+labs(title="Y at time t = {round(frame_time)}")+xlab("x")+ylab("Y(t,x)")+transition_time(t)
-
-animate(animation,nframes=501,width=960,height=480)
-anim_save("timeplot.gif")
 

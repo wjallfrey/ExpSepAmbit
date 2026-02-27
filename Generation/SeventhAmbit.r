@@ -130,3 +130,7 @@ mclapply(1:4, function(i){
 Y<-ambitfield(100,200,deltat=0.02,c=1,B=matrix(c(1,0,0,1),2,2),parameters=paras,tol=10^(-5),depth=1)
 
 
+for(i in 1:4){
+  Y<-ambitfield(100,200,deltat=0.02,c=1,B=matrix(c(1,0,0,1),2,2),parameters=paras,tol=10^(-5),depth=1)
+  saveRDS(Y,file=paste("Output Fields/finest002v",i,".rds",sep=""))
+}
