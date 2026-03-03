@@ -121,13 +121,16 @@ g<-function(t,x,s,xi,k,mu,lambda){
 }
 
 paras<-list(k11=0.9,k21=0.4,k22=1.4,mu11=0.5,mu21=0.9,mu22=0.2,lambda11=0.3,lambda21=0.7,lambda22=0.5)
+paras<-list(k11=1.2,k21=0.5,k22=1,mu11=0.1,mu21=0.4,mu22=0.2,lambda11=0.2,lambda21=0.5,lambda22=0.2)
 
-mclapply(1:4, function(i){
-  Y<-ambitfield(100,200,deltat=0.02,c=1,B=matrix(c(1,0,0,1),2,2),parameters=paras,tol=10^(-5),depth=1)
-  saveRDS(Y,file=paste("Output Fields/finest002v",i,".rds",sep=""))
+
+
+mclapply(1:10, function(i){
+  Y<-ambitfield(100,200,deltat=0.1,c=1,B=matrix(c(1,0,0,1),2,2),parameters=paras,tol=10^(-5),depth=1)
+  saveRDS(Y,file=paste("Output Fields/differentParameters01v",i,".rds",sep=""))
 },mc.cores=10)
 
-Y<-ambitfield(100,200,deltat=0.02,c=1,B=matrix(c(1,0,0,1),2,2),parameters=paras,tol=10^(-5),depth=1)
+Y<-ambitfield(100,200,deltat=0.1,c=1,B=matrix(c(1,0,0,1),2,2),parameters=paras,tol=10^(-5),depth=1)
 
 
 for(i in 1:4){

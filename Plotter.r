@@ -5,7 +5,7 @@ library(ggplot2)
 library(gganimate)
 library(reshape2)
 
-Y<-readRDS("Output Fields/bulk01v17.rds")
+Y<-readRDS("Output Fields/bulk01v14.rds")
 
 plotfield<-function(Y){
   y1<-Y[[1]]
@@ -80,13 +80,16 @@ plotvariograms<-function(fulldata){
   ggarrange(p11t,p12t,p12t,p22t,p11s,p12s,p12s,p22s,nrow=4,ncol=2)
 }
 
-fulldata<-twostepparas(Y,10,0.001,T)
+fulldata<-twostepparas(Y,20,0.001,T)
 plotvariograms(fulldata)
 
-plot(rowMeans((datavars$timedata-rowMeans(datavars$timedata))^2))
-plot(rowMeans((datavars$timedata-rowMeans(datavars$timedata))^2)/rowMeans(datavars$timedata))
-plot(rowMeans((datavars$timedata-theoreticalvariogramsTime(aslist(as.numeric(tail(paralist,1))),timelags,c))^2)/theoreticalvariogramsTime(aslist(as.numeric(tail(paralist,1))),timelags,c)^2)
-plot(rowMeans((datavars$spacedata-theoreticalvariogramsSpace(aslist(as.numeric(tail(paralist,1))),timelags,c))^2)/theoreticalvariogramsSpace(aslist(as.numeric(tail(paralist,1))),spacelags,c)^2)
-plot(rowMeans((datavars$spacedata-rowMeans(datavars$spacedata))^2)/rowMeans(datavars$spacedata)^2)
+paras<-Y[[7]]
+plot(rowSums((datavars$timedata-theoreticalvariogramsTime(paras,timelags,c))^2)/theoreticalvariogramsTime(paras,timelags,c)^2)
 
+Omega<-Etime(as.numeric(paras),c)%*%t(Etime(as.numeric(paras),c))
+plot(diag(Omega))
+plot(diag((solve(Omega))))
+plot(1/diag(Omega))
+levelplot(Omega)
+levelplot(solve(Omega))
 

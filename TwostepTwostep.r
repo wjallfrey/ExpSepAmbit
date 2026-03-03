@@ -3,7 +3,6 @@ library(pracma)
 library(lamW)
 library(ggpubr)
 library(reshape2)
-library(zoo)
 
 gammaijTime<-function(i,j,Tlag,Y){
   yi<-Y[[i]]
@@ -213,15 +212,6 @@ paraestimate<-function(Y,Tlag,Llag,c){
   return(paraests)
 }
 
-Etime<-function(theta){datavarstime-theoreticalvariogramsTime(aslist(theta),timelags,1)}
-Espace<-function(theta){datavarsspace-theoreticalvariogramsTime(aslist(theta),spacelags,1)}
-WeightmatTime<-function(theta){
-  Nx=dim(Etime(theta))[2]
-  solve(1/Nx*Etime(theta)%*%t(Etime(theta)))}
-WeightmatSpace<-function(theta){
-  Nt=dim(Etime(theta))[2]
-  solve(1/Nt*Espace(theta)%*%t(Espace(theta)))}
-
 
 optimise<-function(initialvalue,datavars,timelags,spacelags,WT,WS,c){
   datavarstime<-datavars$timedata
@@ -232,17 +222,20 @@ optimise<-function(initialvalue,datavars,timelags,spacelags,WT,WS,c){
   Espace<-function(theta,c){(datavarsspace-theoreticalvariogramsSpace(aslist(theta),spacelags,c))/theoreticalvariogramsSpace(aslist(theta),spacelags,c)}
   WeightmatTime<-function(theta,c){
     Nx=dim(Etime(theta,c))[2]
-    solve(1/Nx*Etime(theta,c)%*%t(Etime(theta,c)))}
+    solve(1/Nx*Etime(theta,c)%*%t(Etime(theta,c)))
+    #return(diag(1/diag(Etime(theta,c)%*%t(Etime(theta,c)))))
+    }
   WeightmatSpace<-function(theta,c){
     Nt=dim(Espace(theta,c))[2]
-    solve(1/Nt*Espace(theta,c)%*%t(Espace(theta,c)))}
+    solve(1/Nt*Espace(theta,c)%*%t(Espace(theta,c)))
+    #return(diag(1/diag(Espace(theta,c)%*%t(Espace(theta,c)))))
+    }
   if(missing(WT)){WT<-WeightmatTime(initialvalue,c)}
   if(missing(WS)){WS<-WeightmatSpace(initialvalue,c)}
-  #print(levelplot(WT,Rowv = NA,Colv = NA))
+  print(levelplot(WT,Rowv = NA,Colv = NA))
   #print(levelplot(WS,Rowv = NA,Colv = NA))
   as.numeric(optim(initialvalue,function(vecparameters) t(dataspacerow-theoreticalvariogramsSpace(aslist(vecparameters),spacelags,c))%*%WS%*%(dataspacerow-theoreticalvariogramsSpace(aslist(vecparameters),spacelags,c))+t(datatimerow-theoreticalvariogramsTime(aslist(vecparameters),timelags,c))%*%WT%*%(datatimerow-theoreticalvariogramsTime(aslist(vecparameters),timelags,c)))$par)
 }
-
 
 twostepparas<-function(Y,NumberofLags,tol,fulldata){
   c<-Y[[5]]
@@ -271,90 +264,67 @@ twostepparas<-function(Y,NumberofLags,tol,fulldata){
   }
 }
 
-ploterrorconvergence<-function(paralist,trueparas){
-  if(typeof(trueparas)!="double"){trueparas<-as.numeric(trueparas)}
-  twostepdata<-as.data.frame(matrix(as.numeric(paralist),nrow(paralist),9))
-  colnames(twostepdata)<-colnames(paralist)
-  errorsdataframe<-twostepdata-t(matrix(trueparas,9,nrow(paralist)))
-  errorsdataframe$iter<-1:nrow(errorsdataframe)
-  meltederrors<-melt(errorsdataframe,id="iter",variable="parameter")
-  return(ggplot(meltederrors)+geom_line(aes(x=iter,y=value,colour = parameter))+ylab("Error"))
-}
-plotvariograms<-function(fulldata){
-  paralist<-fulldata$paralist
-  trueparas<-fulldata$trueparas
-  datavars<-fulldata$datavars
-  timelags<-fulldata$timelags
-  spacelags<-fulldata$spacelags
-  c<-fulldata$c
-  NumberofLags<-length(timelags)
-  estimatedparas<-aslist(as.numeric(tail(paralist,1)))
-  fullvariogramdata<-data.frame(timelags,spacelags,matrix(c(rowMeans(datavars$timedata),rowMeans(datavars$spacedata),theoreticalvariogramsTime(estimatedparas,timelags,c),theoreticalvariogramsSpace(estimatedparas,spacelags,c),theoreticalvariogramsTime(trueparas,timelags,c),theoreticalvariogramsSpace(trueparas,spacelags,c)),NumberofLags,18))
-  colnames(fullvariogramdata)=c("timelags","spacelags","g11hatt","g12hatt","g22hatt","g11hats","g12hats","g22hats","g11t","g12t","g22t","g11s","g12s","g22s","trueg11t","trueg12t","trueg22t","trueg11s","trueg12s","trueg22s")
-  p11t<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g11t))+geom_point(aes(timelags,g11hatt))+geom_line(aes(timelags,trueg11t),col="blue")+xlab("d_t")+ylab("gamma11T(d_t)")
-  p12t<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g12t))+geom_point(aes(timelags,g12hatt))+geom_line(aes(timelags,trueg12t),col="blue")+xlab("d_t")+ylab("gamma12T(d_t)")
-  p22t<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g22t))+geom_point(aes(timelags,g22hatt))+geom_line(aes(timelags,trueg22t),col="blue")+xlab("d_t")+ylab("gamma22T(d_t)")
-  p11s<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g11s))+geom_point(aes(timelags,g11hats))+geom_line(aes(timelags,trueg11s),col="blue")+xlab("d_t")+ylab("gamma11S(d_t)")
-  p12s<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g12s))+geom_point(aes(timelags,g12hats))+geom_line(aes(timelags,trueg12s),col="blue")+xlab("d_t")+ylab("gamma12S(d_t)")
-  p22s<-ggplot(fullvariogramdata)+geom_line(aes(timelags,g22s))+geom_point(aes(timelags,g22hats))+geom_line(aes(timelags,trueg22s),col="blue")+xlab("d_t")+ylab("gamma22S(d_t)")
-  ggarrange(p11t,p12t,p12t,p22t,p11s,p12s,p12s,p22s,nrow=4,ncol=2)
-  }
+twostepparas(Y,10,0.01)
 
-plotvariograms(twostepparas(Y,20,0.001,T))
-ploterrorconvergence(twostepparas(Y,5,0.001),as.numeric(Y[[7]]))
+levelplot(Etime(initialvalue,c)[1:10,]%*%t(Etime(initialvalue,c)[1:10,]))
+levelplot(solve(Etime(initialvalue,c)[1:10,]%*%t(Etime(initialvalue,c)[1:10,])))
+plot(diag(1/(Etime(initialvalue,c)[1:10,]%*%t(Etime(initialvalue,c)[1:10,]))))
+plot(rowMeans(solve(Etime(initialvalue,c)[1:10,]%*%t(Etime(initialvalue,c)[1:10,]))))
+levelplot(((Omega)[1:3,1:3]))
+levelplot(Omega[1:20,1:20])
+plot(diag(Omega))
+plot(diag(solve(Omega)))
+plot(rowSums(Omega))
+levelplot(((Omega)))
+plot(rowSums(abs(solve(Omega))))
 
-lossfunction<-function(mu21,lambda21,trueparas){
-  paras2<-trueparas
-  paras2$mu21<-mu21
-  paras2$lambda21<-lambda21
-  sum((theoreticalvariogramsSpace(trueparas,spacelags,c)-theoreticalvariogramsSpace(paras2,spacelags,c))^2)+sum((theoreticalvariogramsTime(trueparas,timelags,c)-theoreticalvariogramsTime(paras2,timelags,c))^2)
-}
-mu21range<-1:100/50
-lambda21range<-1:150/50
-matrixoutout<-matrix(0,length(mu21range),length(lambda21range))
-for(i in 1:length(mu21range)){
-  for(j in 1:length(lambda21range)){
-    matrixoutout[i,j]=lossfunction(mu21range[i],lambda21range[j],trueparas)
-  }
-}
-matrixoutout<-na.approx(matrixoutout)
-matrixoutout[which(is.na(matrixoutout))]<-matrixoutout[which(is.na(matrixoutout))+1]
-grid<-expand.grid(mu21s = mu21range,lamdba21s = lambda21range)
-grid$loss<-as.vector(matrixoutout)
-contourplot((loss~mu21s*lamdba21s),grid,at=c(0,0.01,0.05,0.1,0.2,0.4,0.6,0.8,1,2,3,4,ceiling(max(matrixoutout,na.rm=T))),region=T,labels=T)
+Omega
+
+t(c(0,0,0,0,0,0,0,0,1,0))%*%solve(Etime(initialvalue,c)[1:10,]%*%t(Etime(initialvalue,c)[1:10,]))%*%c(0,0,0,0,0,0,0,0,1,0)
+
+
+
 
 
 
 Y<-readRDS("Output Fields/highrespointone.rds1.rds")
-Y<-readRDS("Output Fields/newparasfine3.rds")
-Y<-readRDS("Output Fields/highrespointone.rds2.rds")
-Y<-readRDS("Output Fields/highrespointone.rds3.rds")
-Y<-readRDS("Output Fields/highrespointone.rds4.rds")
-Y<-readRDS("Output Fields/highrespointone.rds5.rds")
 NumberofLags<-10
+plotvariograms(twostepparas(Y,10,0.01,T))
+paras<-as.numeric(tail(twostepparas(Y,10,0.01),1))
 
-paraslist<-twostepparas(Y,10,0.001)
-as.numeric(Y[[7]])
-Y[[5]]
-ploterrorconvergence(paraslist,as.numeric(Y[[7]]))
+Etime<-function(theta,c){(datavarstime-theoreticalvariogramsTime(aslist(theta),timelags,c))/theoreticalvariogramsTime(aslist(theta),timelags,c)}
+Espace<-function(theta,c){(datavarsspace-theoreticalvariogramsSpace(aslist(theta),spacelags,c))/theoreticalvariogramsSpace(aslist(theta),spacelags,c)}
+WeightmatTime<-function(theta,c){
+  Nx=dim(Etime(theta,c))[2]
+  #solve(1/Nx*Etime(theta,c)%*%t(Etime(theta,c)))
+  return(diag(1/diag(Etime(theta,c)%*%t(Etime(theta,c)))))}
+WeightmatSpace<-function(theta,c){
+  Nt=dim(Espace(theta,c))[2]
+  #solve(1/Nt*Espace(theta,c)%*%t(Espace(theta,c)))
+  return(diag(1/diag(Espace(theta,c)%*%t(Espace(theta,c)))))
+  }
+
+Omega<-Etime(paras,c)%*%t(Etime(paras,c))
+levelplot(Omega)
+plot(diag(Omega))
+plot(1/diag(Omega))
+W<-solve(Omega)
+levelplot(solve(Omega))
+plot(diag(W))
+plot(rowSums(abs((W))))
 
 
-#PLOT
-twostepdata<-as.data.frame(matrix(as.numeric(paraslist),nrow(paraslist),9))
-colnames(twostepdata)<-colnames(paraslist)
-errorsdataframe<-twostepdata-t(matrix(as.numeric(Y[[7]]),9,15))
-
-twostepdata$iter<-1:nrow(twostepdata)
-meltedtwostepdata<-melt(twostepdata,id="iter")
-ggplot(meltedtwostepdata)+geom_line(aes(x=iter,y=value,colour = variable))
-
-errorsdataframe$iter<-1:nrow(errorsdataframe)
-meltederrors<-melt(errorsdataframe,id="iter")
-ggplot(meltederrors)+geom_line(aes(x=iter,y=value,colour = variable))
+Omega[1:4,1:4]
+levelplot(Omega[1:4,1:4])
+plot(diag(Omega[1:4,1:4]))
+plot(rowSums(Omega[1:4,1:4]))
 
 
 
+solve(Omega[1:4,1:4])
+levelplot(solve(Omega[1:4,1:4]))
+plot(diag(solve(Omega[1:4,1:4])))
+plot(rowSums(abs(solve(Omega[1:4,1:4]))))
 
-
-
+levelplot(diag(1/diag(Omega)))
 

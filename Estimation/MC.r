@@ -26,7 +26,7 @@ for(i in 1:50){
 
 allparaests<-matrix(0,50,9)
 errorComparison<-matrix(0,50,9)
-for(i in 41:50){
+for(i in 1:50){
   Y<-readRDS(paste("Output Fields/bulk01v",i,".rds",sep=""))
   allparaests[i,]<-method4(Y,15)
   errorComparison[i,]=c(errors1(Y),errors4(Y,2),errors4(Y,4),errors4(Y,6),errors4(Y,8),errors4(Y,10),errors4(Y,12),errors4(Y,14),errors4(Y,16))
