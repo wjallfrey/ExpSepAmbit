@@ -168,8 +168,8 @@ aslist<-function(vecparameters){return(list(k11=vecparameters[1],k21=vecparamete
 
 gammahatsijTime<-function(i,j,Y,timelags){
   Nx<-dim(Y[[1]])[2]
-  output<-matrix(0,NumberofLags,Nx)
   NumberofLags<-length(timelags)
+  output<-matrix(0,NumberofLags,Nx)
   for(k in 1:NumberofLags){
     Tlag<-timelags[k]
     output[k,]<-normalisedgammaijTimeHAT(i,j,Tlag,Y)
@@ -178,8 +178,8 @@ gammahatsijTime<-function(i,j,Y,timelags){
 }
 gammahatsijSpace<-function(i,j,Y,spacelags){
   Nt<-dim(Y[[1]])[1]
-  output<-matrix(0,NumberofLags,Nt)
   NumberofLags<-length(spacelags)
+  output<-matrix(0,NumberofLags,Nt)
   for(k in 1:NumberofLags){
     Llag<-spacelags[k]
     output[k,]<-normalisedgammaijSpaceHAT(i,j,Llag,Y)
@@ -273,7 +273,6 @@ loss12space<-function(lambda21,estimatedparas,Y,spacelags,S,gammahats){
   return(lossfunction)
 }
 
-
 CovE11Time<-function(k11,estimatedparas,Y,timelags,Chats){
   timelags0<-c(0,timelags) #including the zero lag as we now have covaraince
   c<-Y[[5]]
@@ -322,7 +321,17 @@ half22normalisedgamma22TimeHAT<-function(Tlag,parameters,c,Y){
   parametersk22is0$k22<-0
   1-(CijhatTime(2,2,Tlag,Y)-C22Time(Tlag,parametersk22is0,c))/(CijhatTime(2,2,0,Y)-C22Time(0,parametersk22is0,c))
 }
-E22timeHalf<-function(mu22,estimatedparas,Y,timelags){
+halfgammahats22Time<-function(timelags,parameters,c,Y){
+  Nx<-dim(Y[[1]])[2]
+  NumberofLags<-length(timelags)
+  output<-matrix(0,NumberofLags,Nx)
+  for(k in 1:NumberofLags){
+    Tlag<-timelags[k]
+    output[k,]<-half22normalisedgamma22TimeHAT(Tlag,parameters,c,Y)
+  }
+  return(output)
+}
+E22timeHalf<-function(mu22,estimatedparas,Y,timelags,halfgammahats){
   NumberofLags<-length(timelags)
   c<-Y[[5]]
   Nx<-dim(Y[[1]])[2]
@@ -331,15 +340,16 @@ E22timeHalf<-function(mu22,estimatedparas,Y,timelags){
   parameters$mu22<-mu22
   for(i in 1:NumberofLags){
     Tlag<-timelags[i]
-    E22timemat[i,]<-half22normalisedgamma22TimeHAT(Tlag,parameters,c,Y)-half22normalisedgamma22Time(Tlag,parameters,c)
+    E22timemat[i,]<-halfgammahats[i,]-half22normalisedgamma22Time(Tlag,parameters,c)
   }
   return(E22timemat)
 }
-loss22timeHalf<-function(mu22,estimatedparas,Y,timelags,S){
-  e22<-E22timeHalf(mu22,estimatedparas,Y,timelags)
+loss22timeHalf<-function(mu22,estimatedparas,Y,timelags,S,halfgammahats){
+  e22<-E22timeHalf(mu22,estimatedparas,Y,timelags,halfgammahats)
   lossfunction<-t(rowSums(e22))%*%S%*%(rowSums(e22))
   return(lossfunction)
 }
+
 half22normalisedgamma22Space<-function(Llag,parameters,c){
   parametersk22is0<-parameters
   parametersk22is0$k22<-0
@@ -350,7 +360,17 @@ half22normalisedgamma22SpaceHAT<-function(Llag,parameters,c,Y){
   parametersk22is0$k22<-0
   1-(CijhatSpace(2,2,Llag,Y)-C22Space(Llag,parametersk22is0,c))/(CijhatSpace(2,2,0,Y)-C22Space(0,parametersk22is0,c))
 }
-E22spaceHalf<-function(lambda22,estimatedparas,Y,spacelags){
+halfgammahats22Space<-function(spacelags,parameters,c,Y){
+  Nt<-dim(Y[[1]])[1]
+  NumberofLags<-length(spacelags)
+  output<-matrix(0,NumberofLags,Nt)
+  for(k in 1:NumberofLags){
+    Llag<-spacelags[k]
+    output[k,]<-half22normalisedgamma22SpaceHAT(Llag,parameters,c,Y)
+  }
+  return(output)
+}
+E22spaceHalf<-function(lambda22,estimatedparas,Y,spacelags,halfgammahats){
   NumberofLags<-length(spacelags)
   c<-Y[[5]]
   Nt<-dim(Y[[1]])[1]
@@ -359,17 +379,17 @@ E22spaceHalf<-function(lambda22,estimatedparas,Y,spacelags){
   parameters$lambda22<-lambda22
   for(i in 1:NumberofLags){
     Llag<-spacelags[i]
-    E22spacemat[i,]<-half22normalisedgamma22SpaceHAT(Llag,parameters,c,Y)-half22normalisedgamma22Space(Llag,parameters,c)
+    E22spacemat[i,]<-halfgammahats[i,]-half22normalisedgamma22Space(Llag,parameters,c)
   }
   return(E22spacemat)
 }
-loss22spaceHalf<-function(lambda22,estimatedparas,Y,spacelags,S){
-  e22<-E22spaceHalf(lambda22,estimatedparas,Y,spacelags)
+loss22spaceHalf<-function(lambda22,estimatedparas,Y,spacelags,S,halfgammahats){
+  e22<-E22spaceHalf(lambda22,estimatedparas,Y,spacelags,halfgammahats)
   lossfunction<-t(rowSums(e22))%*%S%*%(rowSums(e22))
   return(lossfunction)
 }
 
-CovE22Time<-function(k22,estimatedparas,Y,timelags){
+CovE22Time<-function(k22,estimatedparas,Y,timelags,Chats){
   timelags0<-c(0,timelags) #including the zero lag as we now have covaraince
   c<-Y[[5]]
   Nx<-dim(Y[[1]])[2]
@@ -378,12 +398,12 @@ CovE22Time<-function(k22,estimatedparas,Y,timelags){
   parameters$k22<-k22
   for(i in 1:length(timelags0)){
     Tlag<-timelags0[i]
-    CovE22timeemat[i,]<-CijhatTime(2,2,timelags0[i],Y)-C22Time(timelags0[i],parameters,c)
+    CovE22timeemat[i,]<-Chats[i,]-C22Time(timelags0[i],parameters,c)
   }
   return(CovE22timeemat)
 }
-lossCov22time<-function(k22,estimatedparas,Y,timelags,S){
-  e22<-CovE22Time(k22,estimatedparas,Y,timelags)
+lossCov22time<-function(k22,estimatedparas,Y,timelags,S,Chats){
+  e22<-CovE22Time(k22,estimatedparas,Y,timelags,Chats)
   lossfunction<-t(rowSums(e22))%*%S%*%rowSums(e22)
   return(lossfunction)
 }
@@ -407,7 +427,6 @@ getmu11<-function(Y,initialmu11,estimatedparas,timelags,tol,Weights){
   }
   return(mu11hat)
 }
-estimatedparas$mu11<-getmu11(Y,1,estimatedparas,timelags,0.01,T)
 getmu21<-function(Y,initialmu21,estimatedparas,timelags,tol,Weights){
   if(missing(Weights)){Weights<-T}
   NumberofLags<-length(timelags)
@@ -425,7 +444,6 @@ getmu21<-function(Y,initialmu21,estimatedparas,timelags,tol,Weights){
   }
   return(mu21hat)
 }
-estimatedparas$mu21<-getmu21(Y,1,estimatedparas,timelags,0.01,T)
 getlambda11<-function(Y,initiallambda11,estimatedparas,spacelags,tol,Weights){
   if(missing(Weights)){Weights<-T}
   NumberofLags<-length(spacelags)
@@ -444,7 +462,6 @@ getlambda11<-function(Y,initiallambda11,estimatedparas,spacelags,tol,Weights){
   }
   return(lambda11hat)
 }
-estimatedparas$lambda11<-getlambda11(Y,1,estimatedparas,timelags,0.01,T)
 getlambda21<-function(Y,initiallambda21,estimatedparas,spacelags,tol,Weights){
   if(missing(Weights)){Weights<-T}
   NumberofLags<-length(spacelags)
@@ -462,7 +479,6 @@ getlambda21<-function(Y,initiallambda21,estimatedparas,spacelags,tol,Weights){
   }
   return(lambda21hat)
 }
-estimatedparas$lambda21<-getlambda21(Y,1,estimatedparas,timelags,0.01,T)
 getk11<-function(Y,initialk11,estimatedparas,timelags,tol,Weights){
   Chats<-ChatsijTime(1,1,Y,timelags)
   if(missing(Weights)){Weights<-T}
@@ -480,7 +496,6 @@ getk11<-function(Y,initialk11,estimatedparas,timelags,tol,Weights){
   }
   return(k11hat)
 }
-estimatedparas$k11<-getk11(Y,1,estimatedparas,timelags,0.01,T)
 getk21<-function(Y,initialk21,estimatedparas,timelags,tol,Weights){
   Chats<-ChatsijTime(1,2,Y,timelags)
   if(missing(Weights)){Weights<-T}
@@ -498,129 +513,96 @@ getk21<-function(Y,initialk21,estimatedparas,timelags,tol,Weights){
   }
   return(k21hat)
 }
-estimatedparas$k21<-getk21(Y,1,estimatedparas,timelags,0.01,T)
-
-
-
-
-getlambda21(Y,1,estimatedparas,spacelags,0.01,T)
-
-
-initialmu21<-1
-S<-diag(NumberofLags)
-for(i in 1:5){
-  mu21hat<-optim(initialmu21,function(mu21){loss12time(mu21,estimatedparas,Y,timelags,S)})$par
-  e12<-E12Time(mu21hat,estimatedparas,Y,timelags)
-  omega<-e12%*%t(e12)
-  S<-solve(omega)
-  initialmu21<-mu21hat
-  print(mu21hat)
+getmu22<-function(Y,initialmu22,estimatedparas,timelags,tol,Weights){
+  if(missing(Weights)){Weights<-T}
+  c<-Y[[5]]
+  NumberofLags<-length(timelags)
+  S<-diag(NumberofLags)
+  dif<-1
+  halfgammahats<-halfgammahats22Time(timelags,estimatedparas,c,Y)
+  while(dif>tol){
+    mu22hat<-optim(initialmu22,function(mu22){loss22timeHalf(mu22,estimatedparas,Y,timelags,S,halfgammahats)},method="BFGS")$par
+    e22<-E22timeHalf(mu22hat,estimatedparas,Y,timelags,halfgammahats)
+    omega<-e22%*%t(e22)
+    S<-solve(omega)
+    dif<-abs(initialmu22-mu22hat)/mu22hat
+    initialmu22<-mu22hat
+  }
+  return(mu22hat)
 }
-estimatedparas$mu21<-mu21hat
-
-
-initiallambda11<-1
-S<-diag(NumberofLags)
-for(i in 1:5){
-  lambda11hat<-optim(initiallambda11,function(lambda11){loss11space(lambda11,estimatedparas,Y,spacelags,S)})$par
-  e11<-E11Space(lambda11hat,estimatedparas,Y,spacelags)
-  omega<-e11%*%t(e11)
-  S<-solve(omega)
-  initiallambda11<-lambda11hat
-  print(lambda11hat)
+getlambda22<-function(Y,initiallambda22,estimatedparas,spacelags,tol,Weights){
+  if(missing(Weights)){Weights<-T}
+  c<-Y[[5]]
+  NumberofLags<-length(spacelags)
+  S<-diag(NumberofLags)
+  dif<-1
+  halfgammahats<-halfgammahats22Space(spacelags,estimatedparas,c,Y)
+  while(dif>tol){
+    lambda22hat<-optim(initiallambda22,function(lambda22){loss22spaceHalf(lambda22,estimatedparas,Y,spacelags,S,halfgammahats)},method="L-BFGS-B",lower=0)$par
+    e22<-E22spaceHalf(lambda22hat,estimatedparas,Y,spacelags,halfgammahats)
+    omega<-e22%*%t(e22)
+    S<-solve(omega)
+    dif<-abs(initiallambda22-lambda22hat)/lambda22hat
+    initiallambda22<-lambda22hat
+  }
+  return(lambda22hat)
+  }
+getk22<-function(Y,initialk22,estimatedparas,timelags,tol,Weights){
+  Chats<-ChatsijTime(2,2,Y,timelags)
+  if(missing(Weights)){Weights<-T}
+  NumberofLags<-length(timelags)
+  S<-diag(NumberofLags+1)
+  dif<-1
+  while(dif>tol){
+    k22hat<-optim(initialk22,function(k22){lossCov22time(k22,estimatedparas,Y,timelags,S,Chats)},method="BFGS")$par
+    if(!Weights){break}
+    e22<-CovE22Time(k22hat,estimatedparas,Y,timelags,Chats)
+    omega<-e22%*%t(e22)
+    S<-solve(omega)
+    dif<-abs(initialk22-k22hat)/k22hat
+    initialk22<-k22hat
+  }
+  return(k22hat)
 }
-estimatedparas$lambda11<-lambda11hat
 
 
-initiallambda21<-1
-S<-diag(NumberofLags)
-for(i in 1:5){
-  lambda21hat<-optim(initiallambda21,function(lambda21){loss12space(lambda21,estimatedparas,Y,spacelags,S)})$par
-  e12<-E12Space(lambda21hat,estimatedparas,Y,spacelags)
-  omega<-e12%*%t(e12)
-  S<-solve(omega)
-  initiallambda21<-lambda21hat
-  print(lambda21hat)
+getparametersOAAT<-function(Y,K,initialparas,tol){
+  if(missing(initialparas)){initialparas<-aslist(c(1,1,1,1,1,1,1,1,1))}
+  if(missing(tol)){tol<-0.001}
+  c<-Y[[5]]
+  deltat<-Y[[6]]
+  #NumberofLags<-K
+  timelags<-((1:K))*2*deltat
+  spacelags<-((1:K))*2*deltat*c
+  estimatedparas<-initialparas
+  estimatedparas$mu11<-getmu11(Y,initialparas$mu11,estimatedparas,timelags,tol,T)
+  print(estimatedparas$mu11)
+  estimatedparas$mu21<-getmu21(Y,initialparas$mu21,estimatedparas,timelags,tol,T)
+  print(estimatedparas$mu21)
+  estimatedparas$lambda11<-getlambda11(Y,initialparas$lambda11,estimatedparas,timelags,tol,T)
+  print(estimatedparas$lambda11)
+  estimatedparas$lambda21<-getlambda21(Y,initialparas$lambda21,estimatedparas,timelags,tol,T)
+  print(estimatedparas$lambda21)
+  estimatedparas$k11<-getk11(Y,initialparas$k11,estimatedparas,timelags,tol,T)
+  estimatedparas$k21<-getk21(Y,initialparas$k21,estimatedparas,timelags,tol,T)
+  estimatedparas$mu22<-getmu22(Y,initialparas$mu22,estimatedparas,timelags,tol,T)
+  estimatedparas$lambda22<-getlambda22(Y,initialparas$lambda22,estimatedparas,spacelags,tol,T)
+  estimatedparas$k22<-getk22(Y,initialparas$k22,estimatedparas,timelags,tol,T)
+  return(estimatedparas)
 }
-estimatedparas$lambda21<-lambda21hat
 
 
-initialk11<-1
-S<-diag(NumberofLags+1)
-for(i in 1:5){
-  k11hat<-optim(initialk11,function(k11){lossCov11time(k11,estimatedparas,Y,timelags,S)})$par
-  e11<-CovE11Time(k11hat,estimatedparas,Y,timelags)
-  omega<-e11%*%t(e11)
-  S<-solve(omega)
-  initialk11<-k11hat
-  print(k11hat)
-}
-estimatedparas$k11<-k11hat
 
+Y<-readRDS("Output Fields/newparasfine3.rds")
+Y<-readRDS("Output Fields/highrespointone.rds1.rds")
+Y<-readRDS("Output Fields/highrespointone.rds2.rds")
+Y<-readRDS("Output Fields/highrespointone.rds3.rds")
+Y<-readRDS("Output Fields/highrespointone.rds4.rds")
+Y<-readRDS(("Output Fields/bulk01v14.rds"))
 
-initialk21<-1
-S<-diag(NumberofLags+1)
-for(i in 1:5){
-  k21hat<-optim(initialk21,function(k21){lossCov12time(k21,estimatedparas,Y,timelags,S)})$par
-  e12<-CovE12Time(k21hat,estimatedparas,Y,timelags)
-  omega<-e12%*%t(e12)
-  S<-solve(omega)
-  initialk21<-k21hat
-  print(k21hat)
-}
-estimatedparas$k21<-k21hat
-
-
-##Weird variogram alternate for 22. Time
-
-initialmu22<-1
-NumberofLags<-length(timelags)
-S<-diag(NumberofLags)
-for(i in 1:5){
-  mu22hat<-optim(initialmu22,function(mu22){loss22timeHalf(mu22,estimatedparas,Y,timelags,S)})$par
-  e22<-E22timeHalf(mu22hat,estimatedparas,Y,timelags)
-  omega<-e22%*%t(e22)
-  S<-solve(omega)
-  initialmu22<-mu22hat
-  print(mu22hat)
-}
-estimatedparas$mu22<-mu22hat
-
-
-#And space
-
-initiallambda22<-1
-NumberofLags<-length(timelags)
-S<-diag(NumberofLags)
-for(i in 1:5){
-  lambda22hat<-optim(initiallambda22,function(lambda22){loss22spaceHalf(lambda22,estimatedparas,Y,timelags,S)})$par
-  e22<-E22spaceHalf(lambda22hat,estimatedparas,Y,spacelags)
-  omega<-e22%*%t(e22)
-  S<-solve(omega)
-  initialmu22<-lambda22hat
-  print(lambda22hat)
-}
-estimatedparas$lambda22<-lambda22hat
-
-#For k22
-
-initialk22<-1
-S<-diag(NumberofLags+1)
-for(i in 1:5){
-  k22hat<-optim(initialk22,function(k22){lossCov22time(k22,estimatedparas,Y,timelags,S)})$par
-  e22<-CovE22Time(k22hat,estimatedparas,Y,timelags)
-  omega<-e22%*%t(e22)
-  S<-solve(omega)
-  initialk22<-k22hat
-  print(k22hat)
-}
-estimatedparas$k22<-k22hat
+round(as.numeric(getparametersOAAT(Y,10))-as.numeric(Y[[7]]),2)
 
 
 estimatedparas<-aslist(c(1,1,1,1,1,1,1,1,1))
-Y<-readRDS("Output Fields/newparasfine3.rds")
-c<-Y[[5]]
-deltat<-Y[[6]]
-NumberofLags<-15
-timelags<-((1:NumberofLags))*2*deltat
-spacelags<-((1:NumberofLags))*2*deltat*c
+
+
