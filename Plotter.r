@@ -80,7 +80,7 @@ plotvariograms<-function(fulldata){
   ggarrange(p11t,p12t,p12t,p22t,p11s,p12s,p12s,p22s,nrow=4,ncol=2)
 }
 
-fulldata<-twostepparas(Y,20,0.001,T)
+fulldata<-twostepparas(Y,10,0.001,T)
 plotvariograms(fulldata)
 
 paras<-Y[[7]]

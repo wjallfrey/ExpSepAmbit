@@ -225,7 +225,7 @@ loss12time<-function(mu21,estimatedparas,Y,timelags,S){
 initialmu21<-1
 S<-diag(NumberofLags)
 for(i in 1:5){
-  mu21hat<-optim(initialmu21,function(mu21){loss12time(mu21,estimatedparas,Y,timelags,S)})$par
+  mu21hat<-optim(initialmu21,function(mu21){loss12time(mu21,estimatedparas,Y,timelags,S)},method="BFGS")$par
   e12<-E12Time(mu21hat,estimatedparas,Y,timelags)
   omega<-e12%*%t(e12)
   S<-solve(omega)
@@ -476,6 +476,6 @@ estimatedparas$k22<-k22hat
 Y<-readRDS("Output Fields/newparasfine3.rds")
 c<-Y[[5]]
 deltat<-Y[[6]]
-NumberofLags<-15
+NumberofLags<-10
 timelags<-((1:NumberofLags))*2*deltat
 spacelags<-((1:NumberofLags))*2*deltat*c

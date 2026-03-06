@@ -1,0 +1,216 @@
+
+
+gammaijTimeHAT<-function(i,j,Tlag,Y,mean){
+  if(missing(mean)){
+    mean=F
+  }
+  yi<-Y[[i]]
+  yj<-Y[[j]]
+  deltat<-Y[[6]]
+  Nt<-dim(yi)[1]
+  Nx<-dim(yi)[2]
+  gam<-colMeans(0.5*(yi[(Tlag/(2*deltat)+1):Nt,1:Nx]-yi[1:(Nt-Tlag/(2*deltat)),1:Nx])*(yj[(Tlag/(2*deltat)+1):Nt,1:Nx]-yj[1:(Nt-Tlag/(2*deltat)),1:Nx]))
+  if(mean){
+    return(mean(gam))
+  }
+  else{return(gam)}
+}
+gammaijSpaceHAT<-function(i,j,Llag,Y,mean){
+  if(missing(mean)){
+    mean=F
+  }
+  yi<-Y[[i]]
+  yj<-Y[[j]]
+  deltat<-Y[[6]]
+  c<-Y[[5]]
+  Nt<-dim(yi)[1]
+  Nx<-dim(yi)[2]
+  gam<-rowMeans(0.5*(yi[1:Nt,(1+Llag/(2*deltat*c)):Nx]-yi[1:Nt,1:(Nx-Llag/(2*deltat*c))])*(yj[1:Nt,(1+Llag/(2*deltat*c)):Nx]-yj[1:Nt,1:(Nx-Llag/(2*deltat*c))]))
+  if(mean){
+    return(mean(gam))
+  }
+  else{return(gam)}
+}
+normalisedgammaijTimeHAT<-function(i,j,Tlag,Y,mean){
+  if(missing(mean)){
+    mean=F
+  }
+  yi<-Y[[i]]
+  yj<-Y[[j]]
+  deltat<-Y[[6]]
+  Nt<-dim(yi)[1]
+  Nx<-dim(yi)[2]
+  gam<-colMeans(0.5*(yi[(Tlag/(2*deltat)+1):Nt,1:Nx]-yi[1:(Nt-Tlag/(2*deltat)),1:Nx])*(yj[(Tlag/(2*deltat)+1):Nt,1:Nx]-yj[1:(Nt-Tlag/(2*deltat)),1:Nx]))
+  cov0<-mean((yi[1:Nt,1:Nx])*(yj[1:Nt,1:Nx]))
+  if(mean){
+    return(mean(gam/cov0))
+  }
+  else{return(gam/cov0)}
+}
+normalisedgammaijSpaceHAT<-function(i,j,Llag,Y,mean){
+  if(missing(mean)){
+    mean=F
+  }
+  yi<-Y[[i]]
+  yj<-Y[[j]]
+  deltat<-Y[[6]]
+  c<-Y[[5]]
+  Nt<-dim(yi)[1]
+  Nx<-dim(yi)[2]
+  gam<-rowMeans(0.5*(yi[1:Nt,(1+Llag/(2*deltat*c)):Nx]-yi[1:Nt,1:(Nx-Llag/(2*deltat*c))])*(yj[1:Nt,(1+Llag/(2*deltat*c)):Nx]-yj[1:Nt,1:(Nx-Llag/(2*deltat*c))]))
+  cov0<-mean((yi[1:Nt,1:Nx])*(yj[1:Nt,1:Nx]))
+  if(mean){
+    return(mean(gam/cov0))
+  }
+  else{return(gam/cov0)}
+}
+Cijhat<-function(i,j,Tlag,Llag){#i,j=1,2
+  yi<-Y[[i]]
+  yj<-Y[[j]]
+  deltat<-Y[[6]]
+  Nt<-dim(yi)[1]
+  Nx<-dim(yi)[2]
+  Lt<-Y[[4]]
+  Lx<-Y[[3]]
+  tpos<-(Tlag*(Nt-1))/Lt+1
+  xpos<-(Llag*(Nx-1))/Lx+1
+  return(cov(as.vector(yi[1:(Nt+1-tpos),1:(Nx+1-xpos)]),as.vector(yj[(tpos):Nt,(xpos):Nx])))
+}
+
+C11Time<-function(Tlag,parameters,c){
+  k11<-parameters$k11
+  mu11<-parameters$mu11
+  lambda11<-parameters$lambda11
+  return(c*k11^2/(2*mu11*(mu11+c*lambda11))*(exp(-mu11*Tlag)))
+}
+C12Time<-function(Tlag,parameters,c){
+  k11<-parameters$k11
+  k21<-parameters$k21
+  mu11<-parameters$mu11
+  mu21<-parameters$mu21
+  lambda11<-parameters$lambda11
+  lambda21<-parameters$lambda21
+  return((2*c*k11*k21)/((mu11+mu21)*(mu11+mu21+c*(lambda11+lambda21)))*(exp(-mu21*Tlag)))
+}
+C21Time<-function(Tlag,parameters,c){
+  k11<-parameters$k11
+  k21<-parameters$k21
+  mu11<-parameters$mu11
+  mu21<-parameters$mu21
+  lambda11<-parameters$lambda11
+  lambda21<-parameters$lambda21
+  return((2*c*k11*k21)/((mu11+mu21)*(mu11+mu21+c*(lambda11+lambda21)))*(exp(-mu11*Tlag)))
+}
+C22Time<-function(Tlag,parameters,c){
+  k21<-parameters$k21
+  k22<-parameters$k22
+  mu21<-parameters$mu21
+  mu22<-parameters$mu22
+  lambda21<-parameters$lambda21
+  lambda22<-parameters$lambda22
+  return(c*k21^2/(2*mu21*(mu21+c*lambda21))*(exp(-mu21*Tlag))+(c*k22^2/(2*mu22*(mu22+c*lambda22)))*(exp(-mu22*Tlag)))
+}
+C11Space<-function(Llag,parameters,c){
+  k11<-parameters$k11
+  mu11<-parameters$mu11
+  lambda11<-parameters$lambda11
+  return(c*k11^2/(2*mu11*(mu11+c*lambda11))*(exp(-(mu11/c+lambda11)*Llag)*(1+c*lambda11/mu11*(1-exp(-mu11/c*Llag)))))
+}
+C12Space<-function(Llag,parameters,c){
+  k11<-parameters$k11
+  k21<-parameters$k21
+  mu11<-parameters$mu11
+  mu21<-parameters$mu21
+  lambda11<-parameters$lambda11
+  lambda21<-parameters$lambda21
+  return(c*k11*k21*exp(-(mu11+mu21)*(Llag/c))/(mu11+mu21)*(
+    (exp(-lambda11*Llag)+exp(-lambda21*Llag))/(mu11+mu21+c*lambda11+c*lambda21)+
+      exp(-lambda11*Llag)*(exp((mu11+mu21+c*lambda11-c*lambda21)*Llag/(2*c))-1)/(mu11+mu21+c*lambda11-c*lambda21)+
+      exp(-lambda21*Llag)*(exp((mu11+mu21-c*lambda11+c*lambda21)*Llag/(2*c))-1)/(mu11+mu21-c*lambda11+c*lambda21)
+  )
+  )
+}
+C22Space<-function(Llag,parameters,c){
+  k21<-parameters$k21
+  k22<-parameters$k22
+  mu21<-parameters$mu21
+  mu22<-parameters$mu22
+  lambda21<-parameters$lambda21
+  lambda22<-parameters$lambda22
+  return(c*k21^2/(2*mu21*(mu21+c*lambda21))*(exp(-(mu21/c+lambda21)*Llag)*(1+c*lambda21/mu21*(1-exp(-mu21/c*Llag))))+
+           c*k22^2/(2*mu22*(mu22+c*lambda22))*(exp(-(mu22/c+lambda22)*Llag)*(1+c*lambda22/mu22*(1-exp(-mu22/c*Llag)))))
+}
+
+normalisedtheoreticalgamma11Time<-function(Tlag,parameters,c){1-C11Time(Tlag,parameters,c)/C11Time(0,parameters,c)}
+normalisedtheoreticalgamma12Time<-function(Tlag,parameters,c){1-0.5*(C12Time(Tlag,parameters,c)+C21Time(Tlag,parameters,c))/C12Time(0,parameters,c)}
+normalisedtheoreticalgamma22Time<-function(Tlag,parameters,c){1-C22Time(Tlag,parameters,c)/C22Time(0,parameters,c)}
+normalisedtheoreticalgamma11Space<-function(Llag,parameters,c){1-C11Space(Llag,parameters,c)/C11Space(0,parameters,c)}
+normalisedtheoreticalgamma12Space<-function(Llag,parameters,c){1-C12Space(Llag,parameters,c)/C12Space(0,parameters,c)}
+normalisedtheoreticalgamma22Space<-function(Llag,parameters,c){1-C22Space(Llag,parameters,c)/C22Space(0,parameters,c)}
+
+Y<-readRDS("Output Fields/bulk01v47.rds")
+c<-Y[[5]]
+deltat<-Y[[6]]
+K<-10
+timelags<-((1:K))*2*deltat
+spacelags<-((1:K))*2*deltat*c
+timelags<-c(0,timelags)
+spacelags<-c(0,spacelags)
+varplotdata<-matrix(0,K+1,7)
+
+for(i in 1:(K+1)){
+  Tlag<-timelags[i]
+  #varplotdata[i,1]<-normalisedtheoreticalgamma12Time(Tlag,estimatedparas,c)
+  varplotdata[i,2]<-normalisedtheoreticalgamma12Time(Tlag,Y[[7]],c)
+  varplotdata[i,3]<-mean(normalisedgammaijTimeHAT(1,2,Tlag,Y))
+  varplotdata[i,4]<-mean(gammaijTimeHAT(1,2,Tlag,Y))
+  varplotdata[i,5]<-normalisedtheoreticalgamma12Time(Tlag,Y[[7]],c)*C12Time(0,Y[[7]],c)
+  varplotdata[i,6]<-C12Time(Tlag,Y[[7]],c)
+  varplotdata[i,7]<-Cijhat(1,2,Tlag,0)
+}
+for(i in 1:(K+1)){
+  Llag<-spacelags[i]
+  #varplotdata[i,1]<-normalisedtheoreticalgamma12Time(Tlag,estimatedparas,c)
+  varplotdata[i,2]<-normalisedtheoreticalgamma12Space(Llag,Y[[7]],c)
+  varplotdata[i,3]<-mean(normalisedgammaijSpaceHAT(1,2,Llag,Y))
+  varplotdata[i,4]<-mean(gammaijSpaceHAT(1,2,Llag,Y))
+  varplotdata[i,5]<-normalisedtheoreticalgamma12Space(Llag,Y[[7]],c)*C12Space(0,Y[[7]],c)
+  varplotdata[i,6]<-C12Space(Llag,Y[[7]],c)
+  varplotdata[i,7]<-Cijhat(1,2,0,Llag)
+}
+
+dat<-data.frame(timelags,varplotdata)
+colnames(dat)<-c("Lags","estimated","Ntrue","Ncalculated","true","calculated","Ctrue","Ccalc")
+ggplot(dat)+#geom_line(aes(x=Lags,y=estimated))+
+  geom_line(aes(x=Lags,y=Ntrue),col="blue")+
+  geom_point(aes(x=Lags,y=Ncalculated))
+ggplot(dat)+#geom_line(aes(x=Lags,y=estimated))+
+  geom_line(aes(x=Lags,y=true),col="blue")+
+  geom_point(aes(x=Lags,y=calculated))
+ggplot(dat)+#geom_line(aes(x=Lags,y=estimated))+
+  geom_line(aes(x=Lags,y=Ctrue),col="blue")+
+  geom_point(aes(x=Lags,y=Ccalc))
+
+#Just covariance12Time plot
+for(i in 1:50){
+  Y<-readRDS(paste("Output Fields/bulk01v",i,".rds",sep=""))
+  c<-Y[[5]]
+  deltat<-Y[[6]]
+  K<-10
+  timelags<-((1:K))*2*deltat
+  timelags<-c(0,timelags)
+  varplotdata<-matrix(0,K+1,2)
+  for(i in 1:(K+1)){
+    Tlag<-timelags[i]
+    varplotdata[i,1]<-C12Time(Tlag,Y[[7]],c)
+    varplotdata[i,2]<-Cijhat(1,2,Tlag,0)
+  }
+  dat<-data.frame(timelags,varplotdata)
+  colnames(dat)<-c("Lags","Ctrue","Ccalc")
+  plt<-ggplot(dat)+
+    geom_line(aes(x=Lags,y=Ctrue),col="blue")+
+    geom_point(aes(x=Lags,y=Ccalc))#+ylim(c(0,0.5))
+  print(plt)
+}
+
+i<-47

@@ -415,15 +415,15 @@ getmu11<-function(Y,initialmu11,estimatedparas,timelags,tol,Weights){
   S<-diag(NumberofLags)
   dif<-1
   gammahats<-gammahatsijTime(1,1,Y,timelags)
+  previousguess<-initialmu11
   while(dif>tol){
     mu11hat<-optim(initialmu11,function(mu11){loss11time(mu11,estimatedparas,Y,timelags,S,gammahats)},method="BFGS")$par
     if(!Weights){break}
     e11<-E11Time(mu11hat,estimatedparas,Y,timelags,gammahats)
     omega<-e11%*%t(e11)
     S<-solve(omega)
-    dif<-abs(initialmu11-mu11hat)/mu11hat
-    initialmu11<-mu11hat
-    #print(c(mu11hat,dif))
+    dif<-abs(previousguess-mu11hat)/mu11hat
+    previousguess<-mu11hat
   }
   return(mu11hat)
 }
@@ -433,14 +433,16 @@ getmu21<-function(Y,initialmu21,estimatedparas,timelags,tol,Weights){
   S<-diag(NumberofLags)
   dif<-1
   gammahats<-gammahatsijTime(1,2,Y,timelags)
+  previousguess<-initialmu21
   while(dif>tol){
     mu21hat<-optim(initialmu21,function(mu21){loss12time(mu21,estimatedparas,Y,timelags,S,gammahats)},method="BFGS")$par
+    #print(mu21hat)
     if(!Weights){break}
     e12<-E12Time(mu21hat,estimatedparas,Y,timelags,gammahats)
     omega<-e12%*%t(e12)
     S<-solve(omega)
-    dif<-abs(initialmu21-mu21hat)/mu21hat
-    initialmu21<-mu21hat
+    dif<-abs(previousguess-mu21hat)/mu21hat
+    previousguess<-mu21hat
   }
   return(mu21hat)
 }
@@ -450,15 +452,15 @@ getlambda11<-function(Y,initiallambda11,estimatedparas,spacelags,tol,Weights){
   S<-diag(NumberofLags)
   dif<-1
   gammahats<-gammahatsijSpace(1,1,Y,spacelags)
+  previousguess<-initiallambda11
   while(dif>tol){
     lambda11hat<-optim(initiallambda11,function(lambda11){loss11space(lambda11,estimatedparas,Y,spacelags,S,gammahats)},method="BFGS")$par
     if(!Weights){break}
     e11<-E11Space(lambda11hat,estimatedparas,Y,spacelags,gammahats)
     omega<-e11%*%t(e11)
     S<-solve(omega)
-    dif<-abs(initiallambda11-lambda11hat)/lambda11hat
-    initiallambda11<-lambda11hat
-
+    dif<-abs(previousguess-lambda11hat)/lambda11hat
+    previousguess<-lambda11hat
   }
   return(lambda11hat)
 }
@@ -468,14 +470,15 @@ getlambda21<-function(Y,initiallambda21,estimatedparas,spacelags,tol,Weights){
   S<-diag(NumberofLags)
   dif<-1
   gammahats<-gammahatsijSpace(1,2,Y,spacelags)
+  previousguess<-initiallambda21
   while(dif>tol){
     lambda21hat<-optim(initiallambda21,function(lambda21){loss12space(lambda21,estimatedparas,Y,spacelags,S,gammahats)},method="BFGS")$par
     if(!Weights){break}
     e12<-E12Space(lambda21hat,estimatedparas,Y,spacelags,gammahats)
     omega<-e12%*%t(e12)
     S<-solve(omega)
-    dif<-abs(initiallambda21-lambda21hat)/lambda21hat
-    initiallambda21<-lambda21hat
+    dif<-abs(previousguess-lambda21hat)/lambda21hat
+    previousguess<-lambda21hat
   }
   return(lambda21hat)
 }
@@ -485,14 +488,15 @@ getk11<-function(Y,initialk11,estimatedparas,timelags,tol,Weights){
   NumberofLags<-length(timelags)
   S<-diag(NumberofLags+1)
   dif<-1
+  previousguess<-initialk11
   while(dif>tol){
     k11hat<-optim(initialk11,function(k11){lossCov11time(k11,estimatedparas,Y,timelags,S,Chats)},method="BFGS")$par
     if(!Weights){break}
     e11<-CovE11Time(k11hat,estimatedparas,Y,timelags,Chats)
     omega<-e11%*%t(e11)
     S<-solve(omega)
-    dif<-abs(initialk11-k11hat)/k11hat
-    initialk11<-k11hat
+    dif<-abs(previousguess-k11hat)/k11hat
+    previousguess<-k11hat
   }
   return(k11hat)
 }
@@ -502,14 +506,15 @@ getk21<-function(Y,initialk21,estimatedparas,timelags,tol,Weights){
   NumberofLags<-length(timelags)
   S<-diag(NumberofLags+1)
   dif<-1
+  previousguess<-initialk21
   while(dif>tol){
     k21hat<-optim(initialk21,function(k21){lossCov12time(k21,estimatedparas,Y,timelags,S,Chats)},method="BFGS")$par
     if(!Weights){break}
     e12<-CovE12Time(k21hat,estimatedparas,Y,timelags,Chats)
     omega<-e12%*%t(e12)
     S<-solve(omega)
-    dif<-abs(initialk21-k21hat)/k21hat
-    initialk21<-k21hat
+    dif<-abs(previousguess-k21hat)/k21hat
+    previousguess<-k21hat
   }
   return(k21hat)
 }
@@ -520,13 +525,14 @@ getmu22<-function(Y,initialmu22,estimatedparas,timelags,tol,Weights){
   S<-diag(NumberofLags)
   dif<-1
   halfgammahats<-halfgammahats22Time(timelags,estimatedparas,c,Y)
+  previousguess<-initialmu22
   while(dif>tol){
     mu22hat<-optim(initialmu22,function(mu22){loss22timeHalf(mu22,estimatedparas,Y,timelags,S,halfgammahats)},method="BFGS")$par
     e22<-E22timeHalf(mu22hat,estimatedparas,Y,timelags,halfgammahats)
     omega<-e22%*%t(e22)
     S<-solve(omega)
-    dif<-abs(initialmu22-mu22hat)/mu22hat
-    initialmu22<-mu22hat
+    dif<-abs(previousguess-mu22hat)/mu22hat
+    previousguess<-mu22hat
   }
   return(mu22hat)
 }
@@ -537,13 +543,14 @@ getlambda22<-function(Y,initiallambda22,estimatedparas,spacelags,tol,Weights){
   S<-diag(NumberofLags)
   dif<-1
   halfgammahats<-halfgammahats22Space(spacelags,estimatedparas,c,Y)
+  previousguess<-initiallambda22
   while(dif>tol){
     lambda22hat<-optim(initiallambda22,function(lambda22){loss22spaceHalf(lambda22,estimatedparas,Y,spacelags,S,halfgammahats)},method="L-BFGS-B",lower=0)$par
     e22<-E22spaceHalf(lambda22hat,estimatedparas,Y,spacelags,halfgammahats)
     omega<-e22%*%t(e22)
     S<-solve(omega)
-    dif<-abs(initiallambda22-lambda22hat)/lambda22hat
-    initiallambda22<-lambda22hat
+    dif<-abs(previousguess-lambda22hat)/lambda22hat
+    previousguess<-lambda22hat
   }
   return(lambda22hat)
   }
@@ -553,14 +560,15 @@ getk22<-function(Y,initialk22,estimatedparas,timelags,tol,Weights){
   NumberofLags<-length(timelags)
   S<-diag(NumberofLags+1)
   dif<-1
+  previousguess<-initialk22
   while(dif>tol){
     k22hat<-optim(initialk22,function(k22){lossCov22time(k22,estimatedparas,Y,timelags,S,Chats)},method="BFGS")$par
     if(!Weights){break}
     e22<-CovE22Time(k22hat,estimatedparas,Y,timelags,Chats)
     omega<-e22%*%t(e22)
     S<-solve(omega)
-    dif<-abs(initialk22-k22hat)/k22hat
-    initialk22<-k22hat
+    dif<-abs(previousguess-k22hat)/k22hat
+    previousguess<-k22hat
   }
   return(k22hat)
 }
@@ -575,14 +583,10 @@ getparametersOAAT<-function(Y,K,initialparas,tol){
   timelags<-((1:K))*2*deltat
   spacelags<-((1:K))*2*deltat*c
   estimatedparas<-initialparas
-  estimatedparas$mu11<-getmu11(Y,initialparas$mu11,estimatedparas,timelags,tol,T)
-  print(estimatedparas$mu11)
+  estimatedparas$mu11<-getmu11(Y,initialparas$mu11,estimatedparas,timelags,tol,F)
   estimatedparas$mu21<-getmu21(Y,initialparas$mu21,estimatedparas,timelags,tol,T)
-  print(estimatedparas$mu21)
-  estimatedparas$lambda11<-getlambda11(Y,initialparas$lambda11,estimatedparas,timelags,tol,T)
-  print(estimatedparas$lambda11)
-  estimatedparas$lambda21<-getlambda21(Y,initialparas$lambda21,estimatedparas,timelags,tol,T)
-  print(estimatedparas$lambda21)
+  estimatedparas$lambda11<-getlambda11(Y,initialparas$lambda11,estimatedparas,spacelags,tol,T)
+  estimatedparas$lambda21<-getlambda21(Y,initialparas$lambda21,estimatedparas,spacelags,tol,T)
   estimatedparas$k11<-getk11(Y,initialparas$k11,estimatedparas,timelags,tol,T)
   estimatedparas$k21<-getk21(Y,initialparas$k21,estimatedparas,timelags,tol,T)
   estimatedparas$mu22<-getmu22(Y,initialparas$mu22,estimatedparas,timelags,tol,T)
@@ -598,11 +602,33 @@ Y<-readRDS("Output Fields/highrespointone.rds1.rds")
 Y<-readRDS("Output Fields/highrespointone.rds2.rds")
 Y<-readRDS("Output Fields/highrespointone.rds3.rds")
 Y<-readRDS("Output Fields/highrespointone.rds4.rds")
-Y<-readRDS(("Output Fields/bulk01v14.rds"))
 
+Y<-readRDS(("Output Fields/bulk01v17.rds"))
+
+as.numeric(getparametersOAAT(Y,10))
 round(as.numeric(getparametersOAAT(Y,10))-as.numeric(Y[[7]]),2)
-
+as.numeric(getparametersOAAT(Y,10))
 
 estimatedparas<-aslist(c(1,1,1,1,1,1,1,1,1))
+c<-Y[[5]]
+deltat<-Y[[6]]
+NumberofLags<-10
 
 
+K<-10
+timelags<-((1:K))*2*deltat
+spacelags<-((1:K))*2*deltat*c
+
+#PLOt variograms estimated and true
+varplotdata<-matrix(0,K,3)
+for(i in 1:K){
+  Tlag<-timelags[i]
+  #varplotdata[i,1]<-normalisedtheoreticalgamma12Time(Tlag,estimatedparas,c)
+  varplotdata[i,2]<-normalisedtheoreticalgamma12Time(Tlag,Y[[7]],c)
+  varplotdata[i,3]<-mean(normalisedgammaijTimeHAT(1,2,Tlag,Y))
+}
+dat<-data.frame(timelags,varplotdata)
+colnames(dat)<-c("Lags","estimated","true","calculated")
+ggplot(dat)+#geom_line(aes(x=Lags,y=estimated))+
+  geom_line(aes(x=Lags,y=true),col="blue")+
+  geom_point(aes(x=Lags,y=calculated))

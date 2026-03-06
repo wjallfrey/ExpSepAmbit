@@ -26,10 +26,13 @@ for(i in 1:50){
 
 allparaests<-matrix(0,50,9)
 errorComparison<-matrix(0,50,9)
+lis2<-rep(0,50)
 for(i in 1:50){
   Y<-readRDS(paste("Output Fields/bulk01v",i,".rds",sep=""))
-  allparaests[i,]<-method4(Y,15)
-  errorComparison[i,]=c(errors1(Y),errors4(Y,2),errors4(Y,4),errors4(Y,6),errors4(Y,8),errors4(Y,10),errors4(Y,12),errors4(Y,14),errors4(Y,16))
+  #lis2[i]<-(mean(normalisedgammaijTimeHAT(1,1,0.2,Y)))
+  allparaests[i,]<-method4(Y,10)
+  #allparaests[i,]<-as.numeric(getparametersOAAT(Y,10))
+  #errorComparison[i,]=c(errors1(Y),errors4(Y,2),errors4(Y,4),errors4(Y,6),errors4(Y,8),errors4(Y,10),errors4(Y,12),errors4(Y,14),errors4(Y,16))
 }
 
 
@@ -55,9 +58,9 @@ ggarrange(kviolin,muviolin,lambdaviolin,nrow=1)
 colMeans(allparaests)
 
 
+errors<-t(allparaests)-as.numeric(Y[[7]])
 
-
-i<-17
+i<-20
 Y<-readRDS(paste("Output Fields/bulk01v",i,".rds",sep=""))
 twostepparas(Y,5,0.001)
 plotvariograms(twostepparas(Y,20,0.001,T))
