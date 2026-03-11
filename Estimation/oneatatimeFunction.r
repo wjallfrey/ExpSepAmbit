@@ -583,7 +583,7 @@ getparametersOAAT<-function(Y,K,initialparas,tol){
   timelags<-((1:K))*2*deltat
   spacelags<-((1:K))*2*deltat*c
   estimatedparas<-initialparas
-  estimatedparas$mu11<-getmu11(Y,initialparas$mu11,estimatedparas,timelags,tol,F)
+  estimatedparas$mu11<-getmu11(Y,initialparas$mu11,estimatedparas,timelags,tol,T)
   estimatedparas$mu21<-getmu21(Y,initialparas$mu21,estimatedparas,timelags,tol,T)
   estimatedparas$lambda11<-getlambda11(Y,initialparas$lambda11,estimatedparas,spacelags,tol,T)
   estimatedparas$lambda21<-getlambda21(Y,initialparas$lambda21,estimatedparas,spacelags,tol,T)
@@ -603,7 +603,7 @@ Y<-readRDS("Output Fields/highrespointone.rds2.rds")
 Y<-readRDS("Output Fields/highrespointone.rds3.rds")
 Y<-readRDS("Output Fields/highrespointone.rds4.rds")
 
-Y<-readRDS(("Output Fields/bulk01v17.rds"))
+Y<-readRDS(("Output Fields/bulk01v13.rds"))
 
 as.numeric(getparametersOAAT(Y,10))
 round(as.numeric(getparametersOAAT(Y,10))-as.numeric(Y[[7]]),2)
@@ -620,12 +620,13 @@ timelags<-((1:K))*2*deltat
 spacelags<-((1:K))*2*deltat*c
 
 #PLOt variograms estimated and true
-varplotdata<-matrix(0,K,3)
+varplotdata<-matrix(0,K,4)
 for(i in 1:K){
   Tlag<-timelags[i]
   #varplotdata[i,1]<-normalisedtheoreticalgamma12Time(Tlag,estimatedparas,c)
   varplotdata[i,2]<-normalisedtheoreticalgamma12Time(Tlag,Y[[7]],c)
   varplotdata[i,3]<-mean(normalisedgammaijTimeHAT(1,2,Tlag,Y))
+  
 }
 dat<-data.frame(timelags,varplotdata)
 colnames(dat)<-c("Lags","estimated","true","calculated")

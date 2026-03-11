@@ -199,17 +199,19 @@ for(i in 1:50){
   K<-10
   timelags<-((1:K))*2*deltat
   timelags<-c(0,timelags)
-  varplotdata<-matrix(0,K+1,2)
+  varplotdata<-matrix(0,K+1,3)
   for(i in 1:(K+1)){
     Tlag<-timelags[i]
-    varplotdata[i,1]<-C12Time(Tlag,Y[[7]],c)
-    varplotdata[i,2]<-Cijhat(1,2,Tlag,0)
+    varplotdata[i,1]<-normalisedtheoreticalgamma12Time(Tlag,Y[[7]],c)*C12Time(0,Y[[7]],c)
+    varplotdata[i,2]<-mean(gammaijTimeHAT(1,2,Tlag,Y)[seq(1,501,10)])
+    varplotdata[i,3]<-var(gammaijTimeHAT(1,2,Tlag,Y)[seq(1,501,10)])
   }
   dat<-data.frame(timelags,varplotdata)
-  colnames(dat)<-c("Lags","Ctrue","Ccalc")
-  plt<-ggplot(dat)+
-    geom_line(aes(x=Lags,y=Ctrue),col="blue")+
-    geom_point(aes(x=Lags,y=Ccalc))#+ylim(c(0,0.5))
+  colnames(dat)<-c("Lags","Vtrue","Vcalc","Vvars")
+  plt<-ggplot(dat)+ylim(c(0,0.3))+
+    geom_line(aes(x=Lags,y=Vtrue),col="black")+
+    geom_point(aes(x=Lags,y=Vcalc,colour=Vvars))#
+    
   print(plt)
 }
 
