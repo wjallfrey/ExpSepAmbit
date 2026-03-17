@@ -116,7 +116,7 @@ ambitfield<-function(Lt,Lx,deltat,c,B,parameters,tol,depth){
   return(list(y1=y1matrix,y2=y2matrix,Lx=Lx,Lt=Lt,c=c,deltat=deltat,parameters=parameters))
 }
 
-ambitfield3<-function(Lt,Lx,deltat,c,B,parameters,tol,depth){
+ambitfield3<-function(Lt,Lx,deltat,c,B,parameters,tol,depth){ #depth not actually included anywhere
   if(missing(tol)){
     tol<-10^(-3)
   }
@@ -248,7 +248,8 @@ g<-function(t,x,s,xi,k,mu,lambda){
 paras<-list(k11=0.9,k21=0.4,k22=1.4,mu11=0.5,mu21=0.9,mu22=0.2,lambda11=0.3,lambda21=0.7,lambda22=0.5)
 
 parasall04<-list(k11=0.4,k21=0.4,k22=0.4,mu11=0.4,mu21=0.4,mu22=0.4,lambda11=0.4,lambda21=0.4,lambda22=0.4)
-diffparas<-list(k11=0.5,k21=0.3,k22=0.4,mu11=0.2,mu21=0.8,mu22=0.4,lambda11=0.3,lambda21=0.9,lambda22=0.5)
+paraset2<-list(k11=0.5,k21=0.3,k22=0.4,mu11=0.2,mu21=0.8,mu22=0.4,lambda11=0.3,lambda21=0.9,lambda22=0.5)
+paraset3<-list(k11=10,k21=2,k22=10,mu11=0.3,mu21=0.5,mu22=0.2,lambda11=0.3,lambda21=1.2,lambda22=0.5)
 
 
 mclapply(1:1000, function(i){
@@ -256,9 +257,11 @@ mclapply(1:1000, function(i){
   saveRDS(Y,file=paste("Output Fields/courseparas04res1depth3v",i,".rds",sep=""))
 },mc.cores=10)
 
-Y<-ambitfield(100,200,deltat=0.1,c=1,B=matrix(c(1,0,0,1),2,2),parameters=paras,tol=10^(-5),depth=1)
+Sys.time()
+Y<-ambitfield3(100,200,deltat=0.1,c=1,B=matrix(c(1,0,0,1),2,2),parameters=parasall04,tol=10^(-5),depth=1)
+Sys.time()
 
-mclapply(1:1000, function(i){
-  Y<-ambitfield3(100,200,deltat=1,c=1,B=matrix(c(1,0,0,1),2,2),parameters=parasall04,tol=10^(-5),depth=3)
-  saveRDS(Y,file=paste("Output Fields/courseambit3par04res1depth3v",i,".rds",sep=""))
+mclapply(111:200, function(i){
+  Y<-ambitfield3(100,200,deltat=0.1,c=1,B=matrix(c(1,0,0,1),2,2),parameters=parasall04,tol=10^(-5),depth=3)
+  saveRDS(Y,file=paste("Output Fields/fineambit3par04res01depth3v",i,".rds",sep=""))
 },mc.cores=10)

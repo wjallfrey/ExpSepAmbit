@@ -92,178 +92,125 @@ C22Space<-function(Llag,parameters,c){
            c*k22^2/(2*mu22*(mu22+c*lambda22))*(exp(-(mu22/c+lambda22)*Llag)*(1+c*lambda22/mu22*(1-exp(-mu22/c*Llag)))))
 }
 
-C11Time(0,Y[[7]],Y[[5]])==0.25
-C22Time(0,Y[[7]],Y[[5]])==0.5
-C12Time(0,Y[[7]],Y[[5]])==0.25
-
-MCdata1<-data.frame(iter=character(),meanY1=character(),meanY2=character(),varY1=character(),varY2=character(),c12=character())
-MCdata2<-data.frame(iter=character(),meanY1=character(),meanY2=character(),varY1=character(),varY2=character(),c12=character())
-MCdata3<-data.frame(iter=character(),meanY1=character(),meanY2=character(),varY1=character(),varY2=character(),c12=character())
-
-for(i in 1:1000){
-  Y<-readRDS(paste("Output Fields/parapointfour05v",i,".rds",sep=""))
-  m1<-mean(Y[[1]])
-  m2<-mean(Y[[2]])
-  var1centred<-(var(as.vector(Y[[1]]))-C11Time(0,Y[[7]],Y[[5]]))/C11Time(0,Y[[7]],Y[[5]])
-  var2centred<-(var(as.vector(Y[[2]]))-C22Time(0,Y[[7]],Y[[5]]))/C22Time(0,Y[[7]],Y[[5]])
-  C12centred<-(cov(as.vector(Y[[1]]),as.vector(Y[[2]]))-C12Time(0,Y[[7]],Y[[5]]))/C12Time(0,Y[[7]],Y[[5]])
-  MCdata1[i,]<-c(i,m1,m2,var1centred,var2centred,C12centred)
-  Y<-readRDS(paste("Output Fields/parapointfour05depth3v",i,".rds",sep=""))
-  m1<-mean(Y[[1]])
-  m2<-mean(Y[[2]])
-  var1centred<-(var(as.vector(Y[[1]]))-C11Time(0,Y[[7]],Y[[5]]))/C11Time(0,Y[[7]],Y[[5]])
-  var2centred<-(var(as.vector(Y[[2]]))-C22Time(0,Y[[7]],Y[[5]]))/C22Time(0,Y[[7]],Y[[5]])
-  C12centred<-(cov(as.vector(Y[[1]]),as.vector(Y[[2]]))-C12Time(0,Y[[7]],Y[[5]]))/C12Time(0,Y[[7]],Y[[5]])
-  MCdata2[i,]<-c(i,m1,m2,var1centred,var2centred,C12centred)
-  Y<-readRDS(paste("Output Fields/diffparas05depth3v",i,".rds",sep=""))
-  m1<-mean(Y[[1]])
-  m2<-mean(Y[[2]])
-  var1centred<-(var(as.vector(Y[[1]]))-C11Time(0,Y[[7]],Y[[5]]))/C11Time(0,Y[[7]],Y[[5]])
-  var2centred<-(var(as.vector(Y[[2]]))-C22Time(0,Y[[7]],Y[[5]]))/C22Time(0,Y[[7]],Y[[5]])
-  C12centred<-(cov(as.vector(Y[[1]]),as.vector(Y[[2]]))-C12Time(0,Y[[7]],Y[[5]]))/C12Time(0,Y[[7]],Y[[5]])
-  MCdata3[i,]<-c(i,m1,m2,var1centred,var2centred,C12centred)
-}
-meltedMCdata1<-melt(MCdata1,id="iter")
-meltedMCdata2<-melt(MCdata2,id="iter")
-meltedMCdata3<-melt(MCdata3,id="iter")
-
-ggplot(meltedMCdata1,aes(x=variable,y=as.numeric(value)))+geom_boxplot(width=0.5)+ylim(-0.2,0.2)#+geom_violin()
-ggplot(meltedMCdata2,aes(x=variable,y=as.numeric(value)))+geom_boxplot(width=0.5)+ylim(-0.2,0.2)#+geom_violin()
-ggplot(meltedMCdata3,aes(x=variable,y=as.numeric(value)))+geom_boxplot(width=0.5)#+geom_violin()
 
 paraslist<-matrix(0,1000,9)
 for(i in 1:1000){
-  Y<-readRDS(paste("Output Fields/parapointfour05v",i,".rds",sep=""))
+  #Y<-readRDS(paste("Output Fields/parapointfour05v",i,".rds",sep=""))
+  Y<-readRDS(paste("Output Fields/ambit3par04res05depth3v",i,".rds",sep=""))
   paraslist[i,]<-method4(Y,10)
+  #paraslist[i,]<-as.numeric(getparametersOAAT(Y,10))
 }
 trueparas<-Y[[7]]
-allparadata<-data.frame(paraslist)
-colnames(allparadata)=c("k11","k21","k22","mu11","mu21","mu22","lambda11","lambda21","lambda22")
-meltedallparadata<-melt(allparadata)
-kviolin<-ggplot(meltedallparadata,aes(x=variable,y=abs(value)))+geom_violin()+scale_x_discrete(limits=c("k11","k21","k22"))+#geom_boxplot(width=0.1)+
-  annotate("point",x=1,y=trueparas$k11,col="blue")+
-  annotate("point",x=2,y=trueparas$k21,col="blue")+
-  annotate("point",x=3,y=trueparas$k22,col="blue")
-muviolin<-ggplot(meltedallparadata,aes(x=variable,y=value))+geom_violin()+scale_x_discrete(limits=c("mu11","mu21","mu22"))+#geom_boxplot(width=0.1)+
-  annotate("point",x=1,y=trueparas$mu11,col="blue")+
-  annotate("point",x=2,y=trueparas$mu21,col="blue")+
-  annotate("point",x=3,y=trueparas$mu22,col="blue")
-lambdaviolin<-ggplot(meltedallparadata,aes(x=variable,y=value))+geom_violin()+scale_x_discrete(limits=c("lambda11","lambda21","lambda22"))+#geom_boxplot(width=0.1)+
-  annotate("point",x=1,y=trueparas$lambda11,col="blue")+
-  annotate("point",x=2,y=trueparas$lambda21,col="blue")+
-  annotate("point",x=3,y=trueparas$lambda22,col="blue")
-ggarrange(kviolin,muviolin,lambdaviolin,nrow=1)
+violinplot(paraslist,trueparas)
+
+violinplot<-function(paralist,trueparas){
+  allparadata<-data.frame(paralist)
+  colnames(allparadata)=c("k11","k21","k22","mu11","mu21","mu22","lambda11","lambda21","lambda22")
+  meltedallparadata<-melt(allparadata)
+  kviolin<-ggplot(meltedallparadata,aes(x=variable,y=value))+geom_violin()+scale_x_discrete(limits=c("k11","k21","k22"))+#geom_boxplot(width=0.1)+
+    annotate("point",x=1,y=trueparas$k11,col="blue")+
+    annotate("point",x=2,y=trueparas$k21,col="blue")+
+    annotate("point",x=3,y=trueparas$k22,col="blue")
+  muviolin<-ggplot(meltedallparadata,aes(x=variable,y=value))+geom_violin()+scale_x_discrete(limits=c("mu11","mu21","mu22"))+#geom_boxplot(width=0.1)+
+    annotate("point",x=1,y=trueparas$mu11,col="blue")+
+    annotate("point",x=2,y=trueparas$mu21,col="blue")+
+    annotate("point",x=3,y=trueparas$mu22,col="blue")
+  lambdaviolin<-ggplot(meltedallparadata,aes(x=variable,y=value))+geom_violin()+scale_x_discrete(limits=c("lambda11","lambda21","lambda22"))+#geom_boxplot(width=0.1)+
+    annotate("point",x=1,y=trueparas$lambda11,col="blue")+
+    annotate("point",x=2,y=trueparas$lambda21,col="blue")+
+    annotate("point",x=3,y=trueparas$lambda22,col="blue")
+  ggarrange(kviolin,muviolin,lambdaviolin,nrow=1)
+}
 
 
-K<-10
-c<-Y[[5]]
-deltat<-Y[[6]]
-timelags<-((1:K))*2*deltat
-timelags0<-c(0,timelags)
-truec11time<-as.numeric(lapply(timelags0,function(tlag){C11Time(tlag,Y[[7]],Y[[5]])}))
-truec12time<-as.numeric(lapply(timelags0,function(tlag){C12Time(tlag,Y[[7]],Y[[5]])}))
-truec21time<-as.numeric(lapply(timelags0,function(tlag){C21Time(tlag,Y[[7]],Y[[5]])}))
-truec22time<-as.numeric(lapply(timelags0,function(tlag){C22Time(tlag,Y[[7]],Y[[5]])}))
-C11Timedata<-matrix(0,1000,K+1)
-C12Timedata<-matrix(0,1000,K+1)
-C21Timedata<-matrix(0,1000,K+1)
-C22Timedata<-matrix(0,1000,K+1)
-for(i in 1:1000){
-  Y<-readRDS(paste("Output Fields/ambit3par04res05depth3v",i,".rds",sep=""))
-  for(j in 1:(K+1)){
-    Tlag<-timelags0[j]
-    C11Timedata[i,j]<-mean(CijhatTime(1,1,Tlag,Y))
-    C12Timedata[i,j]<-mean(CijhatTime(1,2,Tlag,Y))
-    C21Timedata[i,j]<-mean(CijhatTime(2,1,Tlag,Y))
-    C22Timedata[i,j]<-mean(CijhatTime(2,2,Tlag,Y))
+boxplotmoms<-function(filestring,MC,K){
+  MCdata<-data.frame(iter=character(),meanY1=character(),meanY2=character(),varY1=character(),varY2=character(),c12=character())
+  for(i in 1:MC){
+    Y<-readRDS(paste("Output Fields/",filestring,i,".rds",sep=""))
+    m1<-mean(Y[[1]])
+    m2<-mean(Y[[2]])
+    var1centred<-(var(as.vector(Y[[1]]))-C11Time(0,Y[[7]],Y[[5]]))/C11Time(0,Y[[7]],Y[[5]])
+    var2centred<-(var(as.vector(Y[[2]]))-C22Time(0,Y[[7]],Y[[5]]))/C22Time(0,Y[[7]],Y[[5]])
+    C12centred<-(cov(as.vector(Y[[1]]),as.vector(Y[[2]]))-C12Time(0,Y[[7]],Y[[5]]))/C12Time(0,Y[[7]],Y[[5]])
+    MCdata[i,]<-c(i,m1,m2,var1centred,var2centred,C12centred)
   }
+  meltedMCdata<-melt(MCdata,id="iter")
+  ggplot(meltedMCdata,aes(x=variable,y=as.numeric(value)))+geom_boxplot(width=0.5)+ylim(-0.2,0.2)#+geom_violin()
 }
-c11timedataframe<-data.frame(C11Timedata)
-c12timedataframe<-data.frame(C12Timedata)
-c21timedataframe<-data.frame(C21Timedata)
-c22timedataframe<-data.frame(C22Timedata)
-colnames(c11timedataframe)<-timelags0
-colnames(c12timedataframe)<-timelags0
-colnames(c21timedataframe)<-timelags0
-colnames(c22timedataframe)<-timelags0
-meltedc11timedata<-melt(c11timedataframe)
-meltedc12timedata<-melt(c12timedataframe)
-meltedc21timedata<-melt(c21timedataframe)
-meltedc22timedata<-melt(c22timedataframe)
-c11tplt<-ggplot()+geom_boxplot(data=meltedc11timedata,aes(x=variable,y=value))+
-  geom_point(data=NULL,aes(x=timelags0+1,y=truec11time),col="blue",shape="cross")+
-  geom_line(data=NULL,aes(x=timelags0+1,y=truec11time),col="blue")+
-  ggtitle("C_11^T(L) boxplots over 1000 realisations of field. Expected values in blue.")+
-  xlab("L")+ylab("C_11 Time")
-c12tplt<-ggplot()+geom_boxplot(data=meltedc12timedata,aes(x=variable,y=value))+
-  geom_point(data=NULL,aes(x=timelags0+1,y=truec12time),col="blue",shape="cross")+
-  geom_line(data=NULL,aes(x=timelags0+1,y=truec12time),col="blue")+
-  ggtitle("C_12^T(L) boxplots over 1000 realisations of field. Expected values in blue.")+
-  xlab("L")+ylab("C_12 Time")
-c21tplt<-ggplot()+geom_boxplot(data=meltedc21timedata,aes(x=variable,y=value))+
-  geom_point(data=NULL,aes(x=timelags0+1,y=truec21time),col="blue",shape="cross")+
-  geom_line(data=NULL,aes(x=timelags0+1,y=truec21time),col="blue")+
-  ggtitle("C_21^T(L) boxplots over 1000 realisations of field. Expected values in blue.")+
-  xlab("L")+ylab("C_21 Time")
-c22tplt<-ggplot()+geom_boxplot(data=meltedc22timedata,aes(x=variable,y=value))+
-  geom_point(data=NULL,aes(x=timelags0+1,y=truec22time),col="blue",shape="cross")+
-  geom_line(data=NULL,aes(x=timelags0+1,y=truec22time),col="blue")+
-  ggtitle("C_22^T(L) boxplots over 1000 realisations of field. Expected values in blue.")+
-  xlab("L")+ylab("C_22 Time")
-ggarrange(c11tplt,c12tplt,c21tplt,c22tplt)
-
-ggplot()+geom_boxplot(data=meltedc22timedata,aes(x=variable,y=value))+scale_x_discrete(limits=c("10"))+annotate("point",x=1,y=truec22time[11],col="blue",shape="cross")
-
-
-MCdata4<-data.frame(iter=character(),meanY1=character(),meanY2=character(),varY1=character(),varY2=character(),c12=character())
-for(i in 1:1000){
-  Y<-readRDS(paste("Output Fields/ambit2!par04res05depth3v",i,".rds",sep=""))
-  m1<-mean(Y[[1]])
-  m2<-mean(Y[[2]])
-  var1centred<-(var(as.vector(Y[[1]]))-C11Time(0,Y[[7]],Y[[5]]))/C11Time(0,Y[[7]],Y[[5]])
-  var2centred<-(var(as.vector(Y[[2]]))-C22Time(0,Y[[7]],Y[[5]]))/C22Time(0,Y[[7]],Y[[5]])
-  C12centred<-(cov(as.vector(Y[[1]]),as.vector(Y[[2]]))-C12Time(0,Y[[7]],Y[[5]]))/C12Time(0,Y[[7]],Y[[5]])
-  MCdata4[i,]<-c(i,m1,m2,var1centred,var2centred,C12centred)
+variogramwithbox<-function(filestring,MC,K){
+  Y<-readRDS(paste("Output Fields/",filestring,1,".rds",sep=""))
+  c<-Y[[5]]
+  deltat<-Y[[6]]
+  timelags<-((1:K))*2*deltat
+  timelags0<-c(0,timelags)
+  truec11time<-as.numeric(lapply(timelags0,function(tlag){C11Time(tlag,Y[[7]],Y[[5]])}))
+  truec12time<-as.numeric(lapply(timelags0,function(tlag){C12Time(tlag,Y[[7]],Y[[5]])}))
+  truec21time<-as.numeric(lapply(timelags0,function(tlag){C21Time(tlag,Y[[7]],Y[[5]])}))
+  truec22time<-as.numeric(lapply(timelags0,function(tlag){C22Time(tlag,Y[[7]],Y[[5]])}))
+  C11Timedata<-matrix(0,MC,K+1)
+  C12Timedata<-matrix(0,MC,K+1)
+  C21Timedata<-matrix(0,MC,K+1)
+  C22Timedata<-matrix(0,MC,K+1)
+  for(i in 1:MC){
+    Y<-readRDS(paste("Output Fields/",filestring,i,".rds",sep=""))
+    for(j in 1:(K+1)){
+      Tlag<-timelags0[j]
+      C11Timedata[i,j]<-mean(CijhatTime(1,1,Tlag,Y))
+      C12Timedata[i,j]<-mean(CijhatTime(1,2,Tlag,Y))
+      C21Timedata[i,j]<-mean(CijhatTime(2,1,Tlag,Y))
+      C22Timedata[i,j]<-mean(CijhatTime(2,2,Tlag,Y))
+    }
+  }
+  c11timedataframe<-data.frame(C11Timedata)
+  c12timedataframe<-data.frame(C12Timedata)
+  c21timedataframe<-data.frame(C21Timedata)
+  c22timedataframe<-data.frame(C22Timedata)
+  colnames(c11timedataframe)<-timelags0
+  colnames(c12timedataframe)<-timelags0
+  colnames(c21timedataframe)<-timelags0
+  colnames(c22timedataframe)<-timelags0
+  meltedc11timedata<-melt(c11timedataframe)
+  meltedc12timedata<-melt(c12timedataframe)
+  meltedc21timedata<-melt(c21timedataframe)
+  meltedc22timedata<-melt(c22timedataframe)
+  c11tplt<-ggplot()+geom_boxplot(data=meltedc11timedata,aes(x=variable,y=value))+
+    geom_point(data=NULL,aes(x=1:(K+1),y=truec11time),col="blue",shape="cross")+
+    geom_line(data=NULL,aes(x=1:(K+1),y=truec11time),col="blue")+
+    ggtitle("C_11^T(L) boxplots over 1000 realisations of field. Expected values in blue.")+
+    xlab("L")+ylab("C_11 Time")
+  c12tplt<-ggplot()+geom_boxplot(data=meltedc12timedata,aes(x=variable,y=value))+
+    geom_point(data=NULL,aes(x=1:(K+1),y=truec12time),col="blue",shape="cross")+
+    geom_line(data=NULL,aes(x=1:(K+1),y=truec12time),col="blue")+
+    ggtitle("C_12^T(L) boxplots over 1000 realisations of field. Expected values in blue.")+
+    xlab("L")+ylab("C_12 Time")
+  c21tplt<-ggplot()+geom_boxplot(data=meltedc21timedata,aes(x=variable,y=value))+
+    geom_point(data=NULL,aes(x=1:(K+1),y=truec21time),col="blue",shape="cross")+
+    geom_line(data=NULL,aes(x=1:(K+1),y=truec21time),col="blue")+
+    ggtitle("C_21^T(L) boxplots over 1000 realisations of field. Expected values in blue.")+
+    xlab("L")+ylab("C_21 Time")
+  c22tplt<-ggplot()+geom_boxplot(data=meltedc22timedata,aes(x=variable,y=value))+
+    geom_point(data=NULL,aes(x=1:(K+1),y=truec22time),col="blue",shape="cross")+
+    geom_line(data=NULL,aes(x=1:(K+1),y=truec22time),col="blue")+
+    ggtitle("C_22^T(L) boxplots over 1000 realisations of field. Expected values in blue.")+
+    xlab("L")+ylab("C_22 Time")
+  ggarrange(c11tplt,c12tplt,c21tplt,c22tplt)
 }
-meltedMCdata4<-melt(MCdata4,id="iter")
-ggplot(meltedMCdata4,aes(x=variable,y=as.numeric(value)))+geom_boxplot(width=0.5)+ylim(-0.2,0.2)#+geom_violin()
 
 
-MCdata5<-data.frame(iter=character(),meanY1=character(),meanY2=character(),varY1=character(),varY2=character(),c12=character())
-for(i in 1:1000){
-  Y<-readRDS(paste("Output Fields/ambit3par04res05depth3v",i,".rds",sep=""))
-  m1<-mean(Y[[1]])
-  m2<-mean(Y[[2]])
-  var1centred<-(var(as.vector(Y[[1]]))-C11Time(0,Y[[7]],Y[[5]]))/C11Time(0,Y[[7]],Y[[5]])
-  var2centred<-(var(as.vector(Y[[2]]))-C22Time(0,Y[[7]],Y[[5]]))/C22Time(0,Y[[7]],Y[[5]])
-  C12centred<-(cov(as.vector(Y[[1]]),as.vector(Y[[2]]))-C12Time(0,Y[[7]],Y[[5]]))/C12Time(0,Y[[7]],Y[[5]])
-  MCdata5[i,]<-c(i,m1,m2,var1centred,var2centred,C12centred)
-}
-meltedMCdata5<-melt(MCdata5,id="iter")
-ggplot(meltedMCdata5,aes(x=variable,y=as.numeric(value)))+geom_boxplot(width=0.5)+ylim(-0.2,0.2)#+geom_violin()
+boxplotmoms("diffparas05depth3v",1000,10)
+boxplotmoms("parapointfour05v",1000,10)
 
-MCdata6<-data.frame(iter=character(),meanY1=character(),meanY2=character(),varY1=character(),varY2=character(),c12=character())
-for(i in 1:1000){
-  Y<-readRDS(paste("Output Fields/courseambit3par04res1depth3v",i,".rds",sep=""))
-  m1<-mean(Y[[1]])
-  m2<-mean(Y[[2]])
-  var1centred<-(var(as.vector(Y[[1]]))-C11Time(0,Y[[7]],Y[[5]]))/C11Time(0,Y[[7]],Y[[5]])
-  var2centred<-(var(as.vector(Y[[2]]))-C22Time(0,Y[[7]],Y[[5]]))/C22Time(0,Y[[7]],Y[[5]])
-  C12centred<-(cov(as.vector(Y[[1]]),as.vector(Y[[2]]))-C12Time(0,Y[[7]],Y[[5]]))/C12Time(0,Y[[7]],Y[[5]])
-  MCdata6[i,]<-c(i,m1,m2,var1centred,var2centred,C12centred)
-}
-meltedMCdata6<-melt(MCdata6,id="iter")
-ggplot(meltedMCdata6,aes(x=variable,y=as.numeric(value)))+geom_boxplot(width=0.5)+ylim(-0.2,0.2)#+geom_violin()
+boxplotmoms("courseparas04res1depth3v",1000,10) #course ambit1
+boxplotmoms("parapointfour05depth3v",1000,10) #fine ambit1
 
-MCdata7<-data.frame(iter=character(),meanY1=character(),meanY2=character(),varY1=character(),varY2=character(),c12=character())
-for(i in 1:1000){
-  Y<-readRDS(paste("Output Fields/courseparas04res1depth3v",i,".rds",sep=""))
-  m1<-mean(Y[[1]])
-  m2<-mean(Y[[2]])
-  var1centred<-(var(as.vector(Y[[1]]))-C11Time(0,Y[[7]],Y[[5]]))/C11Time(0,Y[[7]],Y[[5]])
-  var2centred<-(var(as.vector(Y[[2]]))-C22Time(0,Y[[7]],Y[[5]]))/C22Time(0,Y[[7]],Y[[5]])
-  C12centred<-(cov(as.vector(Y[[1]]),as.vector(Y[[2]]))-C12Time(0,Y[[7]],Y[[5]]))/C12Time(0,Y[[7]],Y[[5]])
-  MCdata7[i,]<-c(i,m1,m2,var1centred,var2centred,C12centred)
-}
-meltedMCdata7<-melt(MCdata7,id="iter")
-ggplot(meltedMCdata7,aes(x=variable,y=as.numeric(value)))+geom_boxplot(width=0.5)+ylim(-0.2,0.2)#+geom_violin()
+boxplotmoms("ambit2!par04res05depth3v",1000,10) #fine ambit2
+
+boxplotmoms("courseambit3par04res1depth3v",1000,10) #course ambit3
+boxplotmoms("ambit3par04res05depth3v",1000,10) #fine ambit3
+
+variogramwithbox("ambit3par04res05depth3v",1000,10)
+variogramwithbox("courseambit3par04res1depth3v",1000,10)
+variogramwithbox("parapointfour05v",1000,10)
+
+
+variogramwithbox("diffparas05depth3v",1000,10)

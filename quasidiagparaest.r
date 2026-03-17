@@ -1,11 +1,6 @@
-Y<-readRDS(paste("Output Fields/diffparas05depth3v",1,".rds",sep=""))
+Y<-readRDS(paste("Output Fields/diffparas05depth3v",10,".rds",sep=""))
 Y<-readRDS(paste("Output Fields/ambit3par04res05depth3v",1,".rds",sep=""))
 
-K<-10
-c<-Y[[5]]
-deltat<-Y[[6]]
-timelags<-((1:K))*2*deltat
-spacelags<-((1:K))*2*deltat*c
 
 gammaijTime<-function(i,j,Tlag,Y){
   yi<-Y[[i]]
@@ -124,7 +119,7 @@ datavariogram<-function(timelags,spacelags,Y){
 aslist<-function(vecparameters){return(list(k11=vecparameters[1],k21=vecparameters[2],k22=vecparameters[3],mu11=vecparameters[4],mu21=vecparameters[5],mu22=vecparameters[6],lambda11=vecparameters[7],lambda21=vecparameters[8],lambda22=vecparameters[9]))}
 
 E<-function(theta,gammahat,variogram,c,lags){
-  gammahat-theoreticalvariograms(variogram,aslist(theta),lags,c)
+  (gammahat-theoreticalvariograms(variogram,aslist(theta),lags,c))/colMeans(gammahat)
 }
 onelossfunction<-function(E,S){
   t(rowSums(E))%*%S%*%rowSums(E)
@@ -132,7 +127,7 @@ onelossfunction<-function(E,S){
 getnewS<-function(E){
   return(solve(E%*%t(E)))
 }
-totallossfunction<-function(theta,datavars,Ss){
+totallossfunction<-function(theta,datavars,Ss,c,timelags,spacelags){
   S11<-Ss$S11
   S12<-Ss$S12
   S22<-Ss$S22
@@ -147,106 +142,110 @@ totallossfunction<-function(theta,datavars,Ss){
                 onelossfunction(E(theta,datavars$g22hats,theoreticalgamma22Space,c,spacelags),S22space))
   return(t(lossvector)%*%(lossvector))
 }
-getnewSs<-function(theta,datavars){
-  S11<-getnewS(E(theta,datavars$g11hatt,theoreticalgamma11Time,c,timelags))
-  S12<-getnewS(E(theta,datavars$g12hatt,theoreticalgamma12Time,c,timelags))
-  S22<-getnewS(E(theta,datavars$g22hatt,theoreticalgamma22Time,c,timelags))
-  S11space<-getnewS(E(theta,datavars$g11hats,theoreticalgamma11Space,c,spacelags))
-  S12space<-getnewS(E(theta,datavars$g12hats,theoreticalgamma12Space,c,spacelags))
-  S22space<-getnewS(E(theta,datavars$g22hats,theoreticalgamma22Space,c,spacelags))
+normed<-function(S){S/norm(S,type="F")}
+getnewSs<-function(theta,datavars,c,timelags,spacelags){
+  S11<-normed(getnewS(E(theta,datavars$g11hatt,theoreticalgamma11Time,c,timelags)))
+  S12<-normed(getnewS(E(theta,datavars$g12hatt,theoreticalgamma12Time,c,timelags)))
+  S22<-normed(getnewS(E(theta,datavars$g22hatt,theoreticalgamma22Time,c,timelags)))
+  S11space<-normed(getnewS(E(theta,datavars$g11hats,theoreticalgamma11Space,c,spacelags)))
+  S12space<-normed(getnewS(E(theta,datavars$g12hats,theoreticalgamma12Space,c,spacelags)))
+  S22space<-normed(getnewS(E(theta,datavars$g22hats,theoreticalgamma22Space,c,spacelags)))
   return(list(S11=S11,S12=S12,S22=S22,S11space=S11space,S12space=S12space,S22space=S22space))
 }
-initialSs<-list(S11=diag(K),S12=diag(K),S22=diag(K),S11space=diag(K),S12space=diag(K),S22space=diag(K))
-datavars<-datavariogram(timelags,spacelags,Y)
+error<-function(theta,Y){sum(abs(theta-as.numeric(Y[[7]])))}
 
-theta1<-optim(rep(0.4,9),function(theta){totallossfunction(theta,datavars,initialSs)})$par
-theta2<-optim(rep(0.4,9),function(theta){totallossfunction(theta,datavars,getnewSs(theta1,datavars))})$par
-theta3<-optim(rep(0.4,9),function(theta){totallossfunction(theta,datavars,getnewSs(theta2,datavars))})$par
-theta4<-optim(rep(0.4,9),function(theta){totallossfunction(theta,datavars,getnewSs(theta3,datavars))})$par
-
-
-
-levelplot(getnewSs(theta1,datavars)$S22space)
-
-optim(c(1,1,1,1,1,1,1,1,1),function(theta){onelossfunction(E(theta,datavariogram(timelags,spacelags,Y)$g11hatt,theoreticalgamma11Time,c,timelags),S)})
-
-theoreticalvariograms(theoreticalgamma11Time,Y[[7]],timelags,Y[[5]])
-datavariogram(timelags,spacelags,Y)$g11hatt-theoreticalvariograms(theoreticalgamma11Time,Y[[7]],timelags,Y[[5]])
-E11<-E(c(1,1,1,1,1,1,1,1,1),datavariogram(timelags,spacelags,Y)$g11hatt,theoreticalgamma11Time,c,timelags)
-rowSums(E11)
-
-E(aslist(c(1,1,1,1,1,1,1,1,1)),datavariogram(timelags,spacelags,Y)$g11hatt,theoreticalgamma11Time,c,timelags)
-
-
-
-
-theoreticalvariogramsTime<-function(parameters,timelags,c){
-  NumberofLags<-length(timelags)
-  g11t<-rep(0,NumberofLags)
-  g12t<-rep(0,NumberofLags)
-  g22t<-rep(0,NumberofLags)
-  for(i in 1:NumberofLags){
-    g11t[i]<-theoreticalgamma11Time(timelags[i],parameters,c)
-    g12t[i]<-theoreticalgamma12Time(timelags[i],parameters,c)
-    g22t[i]<-theoreticalgamma22Time(timelags[i],parameters,c)
-  }
-  return(list(g11t=g11t,g12t=g12t,g22t=g22t))
-}
-theoreticalvariogramsSpace<-function(parameters,spacelags,c){
-  NumberofLags<-length(spacelags)
-  g11s<-rep(0,NumberofLags)
-  g12s<-rep(0,NumberofLags)
-  g22s<-rep(0,NumberofLags)
-  for(i in 1:NumberofLags){
-    g11s[i]<-theoreticalgamma11Space(spacelags[i],parameters,c)
-    g12s[i]<-theoreticalgamma12Space(spacelags[i],parameters,c)
-    g22s[i]<-theoreticalgamma22Space(spacelags[i],parameters,c)
-  }
-  return(c(g11s,g12s,g22s))
-}
-Etime<-function(theta){datavarstime-theoreticalvariogramsTime(aslist(theta),timelags,1)}
-Espace<-function(theta){datavarsspace-theoreticalvariogramsTime(aslist(theta),spacelags,1)}
-WeightmatTime<-function(theta){
-  Nx=dim(Etime(theta))[2]
-  solve(1/Nx*Etime(theta)%*%t(Etime(theta)))}
-WeightmatSpace<-function(theta){
-  Nt=dim(Etime(theta))[2]
-  solve(1/Nt*Espace(theta)%*%t(Espace(theta)))}
-optimise<-function(initialvalue,datavars,timelags,spacelags,WT,WS,c){
-  datavarstime<-datavars$timedata
-  datavarsspace<-datavars$spacedata
-  datatimerow<-rowMeans(datavarstime)
-  dataspacerow<-rowMeans(datavarsspace)
-  Etime<-function(theta,c){datavarstime-theoreticalvariogramsTime(aslist(theta),timelags,c)}
-  Espace<-function(theta,c){datavarsspace-theoreticalvariogramsTime(aslist(theta),spacelags,c)}
-  WeightmatTime<-function(theta,c){
-    Nx=dim(Etime(theta,c))[2]
-    solve(1/Nx*Etime(theta,c)%*%t(Etime(theta,c)))}
-  WeightmatSpace<-function(theta,c){
-    Nt=dim(Etime(theta,c))[2]
-    solve(1/Nt*Espace(theta,c)%*%t(Espace(theta,c)))}
-  if(missing(WT)){WT<-WeightmatTime(initialvalue,c)}
-  if(missing(WS)){WS<-WeightmatSpace(initialvalue,c)}
-  as.numeric(optim(initialvalue,function(vecparameters) t(dataspacerow-theoreticalvariogramsSpace(aslist(vecparameters),spacelags,c))%*%WS%*%(dataspacerow-theoreticalvariogramsSpace(aslist(vecparameters),spacelags,c))+t(datatimerow-theoreticalvariogramsTime(aslist(vecparameters),timelags,c))%*%WT%*%(datatimerow-theoreticalvariogramsTime(aslist(vecparameters),timelags,c)))$par)
-}#optimisation function
-
-twostepparas<-function(Y,NumberofLags,tol){
+getparasM5<-function(Y,K){
   c<-Y[[5]]
   deltat<-Y[[6]]
-  timelags<-((1:NumberofLags))*2*deltat
-  spacelags<-((1:NumberofLags))*2*deltat*c
+  timelags<-((1:K))*2*deltat
+  spacelags<-((1:K))*2*deltat*c
+  initialSs<-list(S11=diag(K),S12=diag(K),S22=diag(K),S11space=diag(K),S12space=diag(K),S22space=diag(K))
   datavars<-datavariogram(timelags,spacelags,Y)
-  
-  initialvalue<-as.numeric(paraestimate(Y,c=c))[3:11]
-  theta0<-optimise(initialvalue,datavars,timelags,spacelags,WT=ones(NumberofLags*3),WS=ones(NumberofLags*3),c=c)
-  parameterEstimateList<-rbind(aslist(initialvalue),aslist(theta0))
-  diff<-sum(abs(initialvalue-theta0))
-  theta<-theta0
-  while(diff>tol){
-    thetaNew<-optimise(theta,datavars,timelags,spacelags,c=c)
-    diff<-sum(abs(thetaNew-theta))
-    theta<-thetaNew
-    parameterEstimateList<-rbind(parameterEstimateList,aslist(thetaNew))
+  oldtheta<-optim(rep(1,9),function(theta){totallossfunction(theta,datavars,initialSs,c,timelags,spacelags)},method="BFGS",control=list(maxit=10000))$par
+  dif<-1
+  while(dif>0.001){
+    optimisation<-optim(oldtheta,function(theta){totallossfunction(theta,datavars,getnewSs(oldtheta,datavars,c,timelags,spacelags),c,timelags,spacelags)},method="BFGS")
+    newtheta<-optimisation$par
+    dif<-max(abs(oldtheta-newtheta))
+    oldtheta<-abs(newtheta)
   }
-  return(parameterEstimateList)
+  return(newtheta)
 }
+getparasM5logexp<-function(Y,K){
+  c<-Y[[5]]
+  deltat<-Y[[6]]
+  timelags<-((1:K))*2*deltat
+  spacelags<-((1:K))*2*deltat*c
+  initialSs<-list(S11=diag(K),S12=diag(K),S22=diag(K),S11space=diag(K),S12space=diag(K),S22space=diag(K))
+  datavars<-datavariogram(timelags,spacelags,Y)
+  oldlogtheta<-optim(rep(0,9),function(logtheta){totallossfunction(exp(logtheta),datavars,initialSs,c,timelags,spacelags)},method="BFGS",control=list(maxit=10000))$par
+  dif<-1
+  while(dif>0.001){
+    #optimisation<-optim(oldtheta,function(theta){totallossfunction(theta,datavars,getnewSs(oldtheta,datavars,c,timelags,spacelags),c,timelags,spacelags)},method="BFGS")
+    optimisationexp<-optim(oldlogtheta,function(logtheta){totallossfunction(exp(logtheta),datavars,getnewSs(exp(oldlogtheta),datavars,c,timelags,spacelags),c,timelags,spacelags)},method="BFGS")
+    newlogtheta<-optimisationexp$par
+    dif<-max(abs(oldlogtheta-newlogtheta))
+    oldlogtheta<-newlogtheta
+  }
+  return(exp(newlogtheta))
+}
+
+#look at autodiff function
+
+#THE BEST ONE yayviolin
+paraslist04parA3<-matrix(0,1000,9)
+for(i in 1:1000){
+  Y<-readRDS(paste("Output Fields/ambit3par04res05depth3v",i,".rds",sep=""))
+  pars<-getparasM5(Y,10)
+  paraslist04parA3[i,]<-pars
+  if(i%%100==0){print(paste("at",i%/%10,"%"))}
+}
+violinplot(paraslist04parA3,Y[[7]])
+
+#NOT YET RUN
+paraslist04parA3expmethod<-matrix(0,1000,9)
+for(i in 1:1000){
+  Y<-readRDS(paste("Output Fields/ambit3par04res05depth3v",i,".rds",sep=""))
+  pars<-getparasM5logexp(Y,10)
+  paraslist04parA3expmethod[i,]<-pars
+  if(i%%100==0){print(paste("at",i%/%10,"%",Sys.time()))}
+}
+violinplot(paraslist04parA3,Y[[7]])
+
+#GOOD BUT SOME ZEROS - check code and multiple initialising points
+paraslistfineA3<-matrix(0,100,9)
+for(i in 1:100){
+  Y<-readRDS(paste("Output Fields/fineambit3par04res01depth3v",i,".rds",sep=""))
+  pars<-getparasM5logexp(Y,10)
+  paraslistfineA3[i,]<-pars
+  print(pars)
+}
+violinplot(paraslistfineA3,Y[[7]])
+
+#WAY OFF ON A FEW OF THEM
+paraslistdiffpar<-matrix(0,1000,9)
+#errors<-rep(0,1000)
+for(i in 1:1000){
+  Y<-readRDS(paste("Output Fields/diffparas05depth3v",i,".rds",sep=""))
+  optimedpars<-getparasM5(Y,10)
+  paraslistdiffpar[i,]<-optimedpars
+  #errors[i]<-error(optimedpars,Y)
+  if(i%%100==0){print(paste("at",i%/%10,"%"))}
+}
+violinplot(paraslistdiffpar[1:5,],Y[[7]])
+
+#WILL THIS BE BETTER - ALSO NOT YET RUN
+paraslistdiffparexpmethod<-matrix(0,1000,9)
+#errors<-rep(0,1000)
+for(i in 1:1000){
+  Y<-readRDS(paste("Output Fields/diffparas05depth3v",i,".rds",sep=""))
+  optimedpars<-getparasM5logexp(Y,10)
+  paraslistdiffparexpmethod[i,]<-optimedpars
+  #errors[i]<-error(optimedpars,Y)
+  if(i%%100==0){print(paste("at",i%/%10,"%"))}
+}
+violinplot(paraslistdiffparexpmethod,Y[[7]])
+
+
+
+

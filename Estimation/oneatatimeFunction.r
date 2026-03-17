@@ -626,7 +626,6 @@ for(i in 1:K){
   #varplotdata[i,1]<-normalisedtheoreticalgamma12Time(Tlag,estimatedparas,c)
   varplotdata[i,2]<-normalisedtheoreticalgamma12Time(Tlag,Y[[7]],c)
   varplotdata[i,3]<-mean(normalisedgammaijTimeHAT(1,2,Tlag,Y))
-  
 }
 dat<-data.frame(timelags,varplotdata)
 colnames(dat)<-c("Lags","estimated","true","calculated")

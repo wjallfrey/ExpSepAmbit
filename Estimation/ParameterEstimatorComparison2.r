@@ -450,8 +450,8 @@ datavariogram<-function(timelags,spacelags,Y){
 }
 aslist<-function(vecparameters){return(list(k11=vecparameters[1],k21=vecparameters[2],k22=vecparameters[3],mu11=vecparameters[4],mu21=vecparameters[5],mu22=vecparameters[6],lambda11=vecparameters[7],lambda21=vecparameters[8],lambda22=vecparameters[9]))}
 
-Etime<-function(theta){datavarstime-theoreticalvariogramsTime(aslist(theta),timelags,1)}
-Espace<-function(theta){datavarsspace-theoreticalvariogramsTime(aslist(theta),spacelags,1)}
+Etime<-function(theta){datavarstime-theoreticalvariogramsTime(aslist(theta),timelags,c)}
+Espace<-function(theta){datavarsspace-theoreticalvariogramsTime(aslist(theta),spacelags,c)}
 WeightmatTime<-function(theta){
   Nx=dim(Etime(theta))[2]
   solve(1/Nx*Etime(theta)%*%t(Etime(theta)))}

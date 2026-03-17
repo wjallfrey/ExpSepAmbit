@@ -57,6 +57,25 @@ lambdaviolin<-ggplot(meltedallparadata,aes(x=variable,y=value))+geom_violin()+sc
   annotate("point",x=3,y=trueparas$lambda22,col="blue")
 ggarrange(kviolin,muviolin,lambdaviolin,nrow=1)
 
+violinplot<-function(paralist,trueparas){
+  allparadata<-data.frame(paralist)
+  colnames(allparadata)=c("k11","k21","k22","mu11","mu21","mu22","lambda11","lambda21","lambda22")
+  meltedallparadata<-melt(allparadata)
+  kviolin<-ggplot(meltedallparadata,aes(x=variable,y=abs(value)))+geom_violin()+scale_x_discrete(limits=c("k11","k21","k22"))+#geom_boxplot(width=0.1)+
+    annotate("point",x=1,y=trueparas$k11,col="blue")+
+    annotate("point",x=2,y=trueparas$k21,col="blue")+
+    annotate("point",x=3,y=trueparas$k22,col="blue")
+  muviolin<-ggplot(meltedallparadata,aes(x=variable,y=value))+geom_violin()+scale_x_discrete(limits=c("mu11","mu21","mu22"))+#geom_boxplot(width=0.1)+
+    annotate("point",x=1,y=trueparas$mu11,col="blue")+
+    annotate("point",x=2,y=trueparas$mu21,col="blue")+
+    annotate("point",x=3,y=trueparas$mu22,col="blue")
+  lambdaviolin<-ggplot(meltedallparadata,aes(x=variable,y=value))+geom_violin()+scale_x_discrete(limits=c("lambda11","lambda21","lambda22"))+#geom_boxplot(width=0.1)+
+    annotate("point",x=1,y=trueparas$lambda11,col="blue")+
+    annotate("point",x=2,y=trueparas$lambda21,col="blue")+
+    annotate("point",x=3,y=trueparas$lambda22,col="blue")
+  ggarrange(kviolin,muviolin,lambdaviolin,nrow=1)
+}
+
 
 da<-data.frame(t((t(listofcovariance)-c(C11Time(0,Y[[7]],Y[[5]]),C12Time(0,Y[[7]],Y[[5]]),C22Time(0,Y[[7]],Y[[5]])))/c(C11Time(0,Y[[7]],Y[[5]]),C12Time(0,Y[[7]],Y[[5]]),C22Time(0,Y[[7]],Y[[5]]))))
 colnames(da)<-c("c11","c12","c22")
